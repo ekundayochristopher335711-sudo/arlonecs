@@ -41,7 +41,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950" />
         <div className="absolute top-0 left-0 w-full h-full opacity-5"
-          style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #6EE7B7 0%, transparent 50%), radial-gradient(circle at 80% 20%, #FDE68A 0%, transparent 40%)' }} />
+          style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #34D399 0%, transparent 50%), radial-gradient(circle at 80% 20%, #22D3EE 0%, transparent 40%)' }} />
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">

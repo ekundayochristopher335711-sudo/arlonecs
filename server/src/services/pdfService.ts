@@ -1,7 +1,7 @@
 import PDFDocument from 'pdfkit'
 import { Response } from 'express'
 
-const GOLD = '#B8860B'
+const GOLD = '#0D9488'
 const NAVY = '#0F172A'
 const LIGHT = '#F8FAFC'
 

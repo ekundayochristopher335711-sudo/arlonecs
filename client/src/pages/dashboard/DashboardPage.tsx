@@ -16,7 +16,7 @@ import { format, parseISO, subDays } from 'date-fns'
 
 const CE_COLORS: Record<string, string> = {
   NOTIFIED: '#3B82F6',
-  QUOTED: '#D4AF37',
+  QUOTED: '#14B8A6',
   ASSESSED: '#F59E0B',
   IMPLEMENTED: '#10B981',
   CLOSED: '#94A3B8',
@@ -133,15 +133,15 @@ export default function DashboardPage() {
             <AreaChart data={ceTimeline}>
               <defs>
                 <linearGradient id="ceGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#B8860B" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#B8860B" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#0D9488" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0D9488" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4} />
               <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`} />
               <Tooltip formatter={(v: number) => [`£${v.toLocaleString('en-GB')}`, 'CE Value']} />
-              <Area type="monotone" dataKey="value" stroke="#B8860B" strokeWidth={2} fill="url(#ceGrad)" />
+              <Area type="monotone" dataKey="value" stroke="#0D9488" strokeWidth={2} fill="url(#ceGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
               <XAxis dataKey="status" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip />
-              <Bar dataKey="count" fill="#B8860B" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="#0D9488" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

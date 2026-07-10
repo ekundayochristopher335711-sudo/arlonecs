@@ -20,7 +20,7 @@ function shell(inner: string): string {
     <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#080F1C;padding:20px 24px;border-radius:8px 8px 0 0">
         <h2 style="color:#FFFFFF;margin:0;font-size:18px">Arlonecs Project Controls</h2>
-        <p style="color:#6EE7B7;margin:4px 0 0;font-size:12px">NEC Contract Workflow Engine</p>
+        <p style="color:#34D399;margin:4px 0 0;font-size:12px">NEC Contract Workflow Engine</p>
       </div>
       <div style="background:#fff;padding:24px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 8px 8px">
         ${inner}
@@ -88,7 +88,7 @@ export async function sendOverdueNotifications() {
       html: shell(`
         ${table(`⚠️ Overdue Compensation Events — ${project.name}`, overdue, '#DC2626')}
         ${table('⏳ Due within 3 days', dueSoon, '#D97706')}
-        <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#B8860B;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Arlonecs Project Controls</a></p>
+        <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#0D9488;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Arlonecs Project Controls</a></p>
       `),
     })
   }
@@ -139,7 +139,7 @@ export async function sendInvitationEmail(
         <strong>${projectName}</strong> as a <strong>${role.replace('_', ' ')}</strong>.
       </p>
       <a href="${inviteUrl}"
-         style="display:inline-block;background:linear-gradient(135deg,#6EE7B7,#FDE68A);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
+         style="display:inline-block;background:linear-gradient(135deg,#34D399,#22D3EE);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
         Accept Invitation
       </a>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
@@ -166,7 +166,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
         Hi ${name}, we received a request to reset your password. This link expires in 1 hour.
       </p>
       <a href="${resetUrl}"
-         style="display:inline-block;background:linear-gradient(135deg,#6EE7B7,#FDE68A);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
+         style="display:inline-block;background:linear-gradient(135deg,#34D399,#22D3EE);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
         Reset Password
       </a>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">

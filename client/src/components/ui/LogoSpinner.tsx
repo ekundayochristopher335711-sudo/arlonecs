@@ -9,8 +9,8 @@ export default function LogoSpinner({ size = 20 }: { size?: number }) {
     >
       <defs>
         <linearGradient id="spinGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-          <stop offset="0%" stopColor="#6EE7B7" />
-          <stop offset="100%" stopColor="#FDE68A" />
+          <stop offset="0%" stopColor="#34D399" />
+          <stop offset="100%" stopColor="#22D3EE" />
         </linearGradient>
       </defs>
       <polygon
@@ -33,9 +33,9 @@ export function PageLoader() {
         <svg width="56" height="56" viewBox="0 0 100 100" className="animate-spin" style={{ animationDuration: '1.2s' }}>
           <defs>
             <linearGradient id="loaderGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor="#6EE7B7" />
-              <stop offset="55%" stopColor="#BEF5DC" />
-              <stop offset="100%" stopColor="#FDE68A" />
+              <stop offset="0%" stopColor="#34D399" />
+              <stop offset="55%" stopColor="#5EEAD4" />
+              <stop offset="100%" stopColor="#22D3EE" />
             </linearGradient>
           </defs>
           <polygon

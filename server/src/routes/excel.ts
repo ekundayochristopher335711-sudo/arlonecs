@@ -10,7 +10,7 @@ import { nextNumber } from '../services/numberingService'
 const router = express.Router()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const GOLD = 'FFB8860B'
+const GOLD = 'FF0D9488'
 const NAVY = 'FF0F172A'
 const LIGHT = 'FFF8FAFC'
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }
@@ -180,7 +180,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
     const totalRow = ws.addRow(['', 'TOTAL VALUATION', '', '', '', total, '', ''])
     totalRow.getCell(2).font = { bold: true, size: 10 }
     totalRow.getCell(6).numFmt = '£#,##0'
-    totalRow.getCell(6).font = { bold: true, color: { argb: 'FFB8860B' }, size: 11 }
+    totalRow.getCell(6).font = { bold: true, color: { argb: 'FF0D9488' }, size: 11 }
 
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CESummary', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
 
