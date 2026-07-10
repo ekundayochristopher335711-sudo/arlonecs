@@ -10,16 +10,24 @@ The frontend calls the API at the same origin under `/api`, so there is **no COR
 
 ## 1. Supabase — get two connection strings
 
-Supabase dashboard → your project → **Project Settings → Database → Connection string**:
+Click the green **"Connect"** button at the top of your Supabase project. Under
+**Connection string** you'll see three options — Direct connection, Transaction pooler,
+Session pooler. Use the two **pooler** ones:
 
 - **`DATABASE_URL`** — the **Transaction pooler** URL (host contains `pooler`, port **6543**).
   Append the flags exactly:
   ```
   ...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
   ```
-- **`DIRECT_URL`** — the **direct** URL (port **5432**). Used only for migrations.
+- **`DIRECT_URL`** — the **Session pooler** URL (host contains `pooler`, port **5432**).
+  Used only for migrations. Copy it as-is (no extra flags).
 
-Replace `[YOUR-PASSWORD]` in both with your database password.
+⚠️ Do **not** use the "Direct connection" option (`db.xxxx.supabase.co`) — it is IPv6-only
+and Vercel's build servers can't reach it, so migrations would fail. The **Session pooler**
+is the IPv4-friendly equivalent that works for migrations.
+
+Replace `[YOUR-PASSWORD]` in both with your database password (Supabase → Settings →
+Database → *Reset database password* if you don't have it).
 
 ## 2. Vercel — project settings (this is the key part)
 
