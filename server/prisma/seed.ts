@@ -1,7 +1,12 @@
 import { PrismaClient, Role, ContractType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+// Seed runs at build time (Vercel) or startup (traditional hosts). Prefer the
+// direct connection when available — the Supabase pooler (pgbouncer) can reject
+// the prepared statements Prisma uses for one-off scripts.
+const prisma = new PrismaClient({
+  datasources: { db: { url: process.env.DIRECT_URL || process.env.DATABASE_URL } },
+})
 
 // One-time rename of legacy Aurum-branded accounts to the Arlonecs domain,
 // preserving passwords and project memberships (no duplicate users).

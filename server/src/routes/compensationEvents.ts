@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
 import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
@@ -10,7 +11,11 @@ import { logAudit, diffObjects } from '../services/auditService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
 import { sendCEStatusChangeNotification } from '../services/emailService'
 
-const UPLOAD_DIR = path.join(__dirname, '../../uploads')
+// On Vercel the only writable location is the ephemeral /tmp. Uploaded files
+// there do NOT persist between requests — for durable storage move this to
+// Supabase Storage / S3. On always-on hosts a local ./uploads dir is used.
+const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'arlonecs-uploads') : path.join(__dirname, '../../uploads')
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
 const storage = multer.diskStorage({
   destination: UPLOAD_DIR,

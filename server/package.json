@@ -4,11 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && prisma migrate deploy && tsx src/index.ts",
     "start": "prisma migrate deploy && npx tsx prisma/seed.ts && npx tsx src/index.ts",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts",
     "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.7.0",
