@@ -18,3 +18,6 @@ export const getMe = () =>
 
 export const getUsers = () =>
   api.get<User[]>('/auth/users').then((r) => r.data)
+
+export const updateUser = (id: string, data: { isActive?: boolean; role?: string }) =>
+  api.patch<User>(`/auth/users/${id}`, data).then((r) => r.data)

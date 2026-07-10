@@ -1,8 +1,9 @@
 import { NavLink, useParams } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, AlertTriangle, ShieldAlert,
-  FileText, Bell, ClipboardList, GitBranch, Files,
+  FileText, Bell, ClipboardList, GitBranch, Files, Users,
 } from 'lucide-react'
+import { useAuthStore } from '../../store/authStore'
 
 function NavItem({ to, icon: Icon, label, end = false, onClose }: { to: string; icon: React.ElementType; label: string; end?: boolean; onClose?: () => void }) {
   return (
@@ -59,6 +60,7 @@ function ProjectNav({ projectId }: { projectId: string }) {
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { projectId } = useParams()
+  const user = useAuthStore((s) => s.user)
 
   return (
     <div className="w-64 lg:w-56 h-full bg-navy-900 flex flex-col shrink-0 border-r border-white/5">
@@ -77,6 +79,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       <nav className="flex-1 py-3 overflow-y-auto scrollbar-thin">
         <SectionLabel>Main</SectionLabel>
         <NavItem to="/projects" icon={FolderOpen} label="Projects" end />
+        {user?.role === 'ADMIN' && <NavItem to="/admin/users" icon={Users} label="User Management" />}
         {projectId && <ProjectNav projectId={projectId} />}
       </nav>
 

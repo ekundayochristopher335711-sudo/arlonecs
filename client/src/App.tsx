@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage'
 import DocumentsPage from './pages/documents/DocumentsPage'
+import UsersPage from './pages/admin/UsersPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailPage from './pages/projects/ProjectDetailPage'
@@ -44,6 +45,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/projects" replace />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="admin/users" element={<UsersPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailPage />} />
           <Route path="projects/:projectId/early-warnings" element={<EarlyWarningsPage />} />
           <Route path="projects/:projectId/risks" element={<RisksPage />} />

@@ -161,4 +161,35 @@ router.get('/users', authenticate, async (req: AuthRequest, res): Promise<void> 
   }
 })
 
+// Admin: activate/deactivate an account or change its global role.
+// Deactivated users cannot log in and existing tokens stop working.
+router.patch('/users/:id', authenticate, async (req: AuthRequest, res): Promise<void> => {
+  if (req.user!.role !== 'ADMIN') { res.status(403).json({ message: 'Admin only' }); return }
+  if (req.params.id === req.user!.id) { res.status(400).json({ message: 'You cannot modify your own account here' }); return }
+
+  const { isActive, role } = req.body
+  if (role !== undefined && !['ADMIN', 'COMMERCIAL_MANAGER', 'VIEWER'].includes(role)) {
+    res.status(400).json({ message: 'Invalid role' })
+    return
+  }
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: {
+        ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
+        ...(role !== undefined ? { role } : {}),
+      },
+      select: { id: true, email: true, name: true, role: true, isActive: true, createdAt: true },
+    })
+    await logAudit({
+      userId: req.user!.id, entityType: 'User', entityId: user.id, action: 'UPDATE',
+      changes: { ...(isActive !== undefined ? { isActive: { old: !user.isActive, new: user.isActive } } : {}), ...(role !== undefined ? { role: { old: 'changed', new: role } } : {}) },
+      ipAddress: req.ip,
+    })
+    res.json(user)
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 export default router
