@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0.5" y1="0" x2="0.5" y2="1">
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#34D399"/>
-      <stop offset="55%" stop-color="#5EEAD4"/>
+      <stop offset="50%" stop-color="#14B8A6"/>
       <stop offset="100%" stop-color="#22D3EE"/>
     </linearGradient>
   </defs>
-  <rect width="100" height="100" fill="#000"/>
-  <polygon points="50,6 88,27 88,73 50,94 12,73 12,27"
-           fill="none" stroke="url(#g)" stroke-width="9" stroke-linejoin="round"/>
-  <rect x="26" y="37" width="48" height="34" rx="2" fill="none" stroke="white" stroke-width="4.5"/>
-  <polyline points="26,40 50,60 74,40" fill="none" stroke="white" stroke-width="4.5" stroke-linejoin="round"/>
+  <!-- Solid gradient hexagon fills the tab icon; A reads even at 16px -->
+  <polygon points="50,1 93,25 93,75 50,99 7,75 7,25"
+           fill="url(#g)" stroke="none" stroke-linejoin="round"/>
+  <path d="M50 22 L71 78" fill="none" stroke="#071A26" stroke-width="12" stroke-linecap="round"/>
+  <path d="M50 22 L29 78" fill="none" stroke="#071A26" stroke-width="12" stroke-linecap="round"/>
+  <path d="M38 60 L62 60" fill="none" stroke="#071A26" stroke-width="11" stroke-linecap="round"/>
 </svg>
