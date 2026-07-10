@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { Download, FileText } from 'lucide-react'
 import { getProjectDocuments, downloadDocument, ProjectDocument } from '../../api/documents'
 import EmptyState from '../../components/ui/EmptyState'
+import { useToast } from '../../components/ui/Toast'
 import { format, parseISO } from 'date-fns'
 
 function formatSize(bytes: number): string {
@@ -21,8 +22,10 @@ export default function DocumentsPage() {
     enabled: !!projectId,
   })
 
+  const toast = useToast()
   const downloadMutation = useMutation({
     mutationFn: (doc: ProjectDocument) => downloadDocument(projectId!, doc.id, doc.name),
+    onError: () => toast.error('Download failed — the file may no longer be in storage.'),
   })
 
   return (
@@ -42,8 +45,8 @@ export default function DocumentsPage() {
           description="Documents attached to Compensation Events appear here as the project's central register."
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Document</th>

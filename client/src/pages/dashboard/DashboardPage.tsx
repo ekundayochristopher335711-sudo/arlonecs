@@ -11,6 +11,7 @@ import { getDashboard, downloadReport, downloadExcel } from '../../api/dashboard
 import { getCEs } from '../../api/compensationEvents'
 import { KPICard } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import { useToast } from '../../components/ui/Toast'
 import { format, parseISO, subDays } from 'date-fns'
 
 const CE_COLORS: Record<string, string> = {
@@ -23,6 +24,16 @@ const CE_COLORS: Record<string, string> = {
 
 export default function DashboardPage() {
   const { projectId } = useParams<{ projectId: string }>()
+  const toast = useToast()
+
+  const exportFile = async (fn: () => Promise<void>, label: string) => {
+    try {
+      await fn()
+      toast.success(`${label} downloaded`)
+    } catch {
+      toast.error(`${label} download failed. Please try again.`)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', projectId],
@@ -37,7 +48,18 @@ export default function DashboardPage() {
     enabled: !!projectId,
   })
 
-  if (isLoading) return <div className="flex items-center justify-center h-64 text-slate-400">Loading dashboard…</div>
+  if (isLoading) return (
+    <div className="space-y-6 max-w-7xl">
+      <div className="h-9 w-64 rounded-lg bg-slate-100 animate-pulse" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-24 rounded-xl bg-slate-100 animate-pulse" />)}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 h-64 rounded-xl bg-slate-100 animate-pulse" />
+        <div className="h-64 rounded-xl bg-slate-100 animate-pulse" />
+      </div>
+    </div>
+  )
   if (!data) return null
 
   // Build CE cumulative value timeline (last 90 days)
@@ -70,13 +92,13 @@ export default function DashboardPage() {
           <p className="text-sm text-slate-500 mt-0.5">Real-time project performance overview</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={() => downloadReport(projectId!, 'commercial')}>
+          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={() => exportFile(() => downloadReport(projectId!, 'commercial'), 'Commercial report')}>
             PDF Report
           </Button>
-          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => downloadExcel(projectId!, 'ces')}>
+          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => exportFile(() => downloadExcel(projectId!, 'ces'), 'CE summary')}>
             CE Excel
           </Button>
-          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => downloadExcel(projectId!, 'risks')}>
+          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => exportFile(() => downloadExcel(projectId!, 'risks'), 'Risk register')}>
             Risk Excel
           </Button>
         </div>

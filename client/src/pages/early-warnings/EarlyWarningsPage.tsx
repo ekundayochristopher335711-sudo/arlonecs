@@ -13,6 +13,8 @@ import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../components/ui/Toast'
 import type { EarlyWarning, EWStatus } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO } from 'date-fns'
@@ -38,9 +40,11 @@ export default function EarlyWarningsPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const queryClient = useQueryClient()
   const { canEdit } = useProjectRole()
+  const toast = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<EarlyWarning | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
+  const [deleting, setDeleting] = useState<EarlyWarning | null>(null)
 
   const { data: ews = [], isLoading } = useQuery({
     queryKey: ['early-warnings', projectId, statusFilter],
@@ -74,8 +78,10 @@ export default function EarlyWarningsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['early-warnings', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(editing ? 'Early warning updated' : 'Early warning logged')
       closeModal()
     },
+    onError: () => toast.error('Could not save the early warning. Please try again.'),
   })
 
   const deleteMutation = useMutation({
@@ -83,7 +89,10 @@ export default function EarlyWarningsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['early-warnings', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(`${deleting?.ewNumber ?? 'EW'} deleted`)
+      setDeleting(null)
     },
+    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
   })
 
   return (
@@ -118,8 +127,8 @@ export default function EarlyWarningsPage() {
           action={canEdit ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Early Warning</Button> : undefined}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">EW No.</th>
@@ -147,11 +156,11 @@ export default function EarlyWarningsPage() {
                   <td className="px-4 py-3 text-slate-500 text-xs">{ew.riskItems?.length ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber)} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
+                      <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber).then(() => toast.success(`${ew.ewNumber}.pdf downloaded`)).catch(() => toast.error('PDF download failed'))} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
                       {canEdit && (
                         <>
                           <button onClick={() => openEdit(ew)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => { if (confirm(`Delete ${ew.ewNumber}?`)) deleteMutation.mutate(ew.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => setDeleting(ew)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </>
                       )}
                     </div>
@@ -162,6 +171,15 @@ export default function EarlyWarningsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title={`Delete ${deleting?.ewNumber}?`}
+        message={`"${deleting?.title}" will be permanently removed. This action is recorded in the audit trail.`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleting && deleteMutation.mutate(deleting.id)}
+        onCancel={() => setDeleting(null)}
+      />
 
       <Modal open={modalOpen} onClose={closeModal} title={editing ? `Edit ${editing.ewNumber}` : 'New Early Warning'} size="lg">
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">

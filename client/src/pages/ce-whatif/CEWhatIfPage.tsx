@@ -139,7 +139,7 @@ export default function CEWhatIfPage() {
       </div>
 
       {/* CE Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-700">Set Scenarios</h3>
           <div className="flex gap-2 text-xs">
@@ -151,7 +151,7 @@ export default function CEWhatIfPage() {
         {activeCEs.length === 0 ? (
           <p className="px-5 py-8 text-sm text-slate-400 text-center">No active compensation events.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase w-24">CE No.</th>

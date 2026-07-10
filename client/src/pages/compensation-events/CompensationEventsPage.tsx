@@ -13,6 +13,8 @@ import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../components/ui/Toast'
 import type { CompensationEvent } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -56,10 +58,12 @@ export default function CompensationEventsPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const queryClient = useQueryClient()
   const { canEdit } = useProjectRole()
+  const toast = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<CompensationEvent | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [uploadCeId, setUploadCeId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<CompensationEvent | null>(null)
 
   const { data: ces = [], isLoading } = useQuery({
     queryKey: ['ces', projectId, statusFilter],
@@ -103,8 +107,10 @@ export default function CompensationEventsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ces', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(editing ? 'Compensation event updated' : 'Compensation event created')
       closeModal()
     },
+    onError: () => toast.error('Could not save the compensation event. Please try again.'),
   })
 
   const deleteMutation = useMutation({
@@ -112,15 +118,20 @@ export default function CompensationEventsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ces', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(`${deleting?.ceNumber ?? 'CE'} deleted`)
+      setDeleting(null)
     },
+    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
   })
 
   const uploadMutation = useMutation({
     mutationFn: ({ ceId, file }: { ceId: string; file: File }) => uploadDocument(projectId!, ceId, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ces', projectId] })
+      toast.success('Document uploaded')
       setUploadCeId(null)
     },
+    onError: () => toast.error('Upload failed. Files must be under 10MB.'),
   })
 
   const totalValue = ces.reduce((sum, ce) => sum + (ce.valuationAmount ?? 0), 0)
@@ -152,8 +163,8 @@ export default function CompensationEventsPage() {
       ) : ces.length === 0 ? (
         <EmptyState title="No compensation events" description="Log compensation events following NEC clause 60 onwards." action={canEdit ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New CE</Button> : undefined} />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">CE No.</th>
@@ -200,7 +211,7 @@ export default function CompensationEventsPage() {
                       <div className="flex items-center gap-1">
                         {canEdit && <button onClick={() => { setUploadCeId(ce.id) }} title="Upload document" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Upload className="w-4 h-4" /></button>}
                         {canEdit && <button onClick={() => openEdit(ce)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>}
-                        {canEdit && <button onClick={() => { if (confirm(`Delete ${ce.ceNumber}?`)) deleteMutation.mutate(ce.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>}
+                        {canEdit && <button onClick={() => setDeleting(ce)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </td>
                   </tr>
@@ -239,6 +250,15 @@ export default function CompensationEventsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleting}
+        title={`Delete ${deleting?.ceNumber}?`}
+        message={`"${deleting?.title}" and its documents will be permanently removed. This action is recorded in the audit trail.`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleting && deleteMutation.mutate(deleting.id)}
+        onCancel={() => setDeleting(null)}
+      />
 
       <Modal open={!!uploadCeId} onClose={() => setUploadCeId(null)} title="Upload Document" size="sm">
         <div className="space-y-4">

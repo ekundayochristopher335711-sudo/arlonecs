@@ -14,6 +14,9 @@ import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../components/ui/Toast'
+import type { Notice } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO } from 'date-fns'
 
@@ -55,6 +58,8 @@ export default function NoticesPage() {
   const queryClient = useQueryClient()
   const { canEdit } = useProjectRole()
   const [modalOpen, setModalOpen] = useState(false)
+  const [deleting, setDeleting] = useState<Notice | null>(null)
+  const toast = useToast()
 
   const { data: notices = [], isLoading } = useQuery({
     queryKey: ['notices', projectId],
@@ -81,13 +86,20 @@ export default function NoticesPage() {
     mutationFn: (data: FormData) => createNotice(projectId!, { ...data, ceId: data.ceId || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notices', projectId] })
+      toast.success('Notice issued')
       closeModal()
     },
+    onError: () => toast.error('Could not issue the notice. Please try again.'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteNotice(projectId!, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices', projectId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notices', projectId] })
+      toast.success(`${deleting?.noticeNumber ?? 'Notice'} deleted`)
+      setDeleting(null)
+    },
+    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
   })
 
   const handleDownload = async (noticeId: string, noticeNumber: string) => {
@@ -97,7 +109,10 @@ export default function NoticesPage() {
       const a = document.createElement('a')
       a.href = url; a.download = `${noticeNumber}.pdf`; a.click()
       URL.revokeObjectURL(url)
-    } catch { /* user can retry */ }
+      toast.success(`${noticeNumber}.pdf downloaded`)
+    } catch {
+      toast.error('PDF download failed. Please try again.')
+    }
   }
 
   return (
@@ -115,8 +130,8 @@ export default function NoticesPage() {
       ) : notices.length === 0 ? (
         <EmptyState title="No notices issued" description="Issue formal NEC notices linked to compensation events or standalone." action={<Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>Issue Notice</Button>} />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Notice No.</th>
@@ -149,7 +164,7 @@ export default function NoticesPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <button onClick={() => handleDownload(n.id, n.noticeNumber)} title="Download PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-gold-600 transition-colors"><Download className="w-4 h-4" /></button>
-                      <button onClick={() => { if (confirm(`Delete ${n.noticeNumber}?`)) deleteMutation.mutate(n.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => setDeleting(n)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -158,6 +173,15 @@ export default function NoticesPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title={`Delete ${deleting?.noticeNumber}?`}
+        message={`"${deleting?.title}" will be permanently removed. Formal notices form part of the contractual record — deleting is recorded in the audit trail.`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleting && deleteMutation.mutate(deleting.id)}
+        onCancel={() => setDeleting(null)}
+      />
 
       <Modal open={modalOpen} onClose={closeModal} title="Issue Notice" size="xl">
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">

@@ -17,6 +17,8 @@ import Select from '../../components/ui/Select'
 import Textarea from '../../components/ui/Textarea'
 import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { useToast } from '../../components/ui/Toast'
 import type { RiskItem } from '../../types'
 
 const schema = z.object({
@@ -55,6 +57,8 @@ export default function RisksPage() {
   const [view, setView] = useState<'list' | 'heatmap'>('list')
   const importRef = useRef<HTMLInputElement>(null)
   const [importMsg, setImportMsg] = useState('')
+  const [deleting, setDeleting] = useState<RiskItem | null>(null)
+  const toast = useToast()
 
   const { data: risks = [], isLoading } = useQuery({
     queryKey: ['risks', projectId, statusFilter],
@@ -108,8 +112,10 @@ export default function RisksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(editing ? 'Risk updated' : 'Risk added to register')
       closeModal()
     },
+    onError: () => toast.error('Could not save the risk. Please try again.'),
   })
 
   const deleteMutation = useMutation({
@@ -117,7 +123,10 @@ export default function RisksPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
+      toast.success(`${deleting?.riskId ?? 'Risk'} deleted`)
+      setDeleting(null)
     },
+    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
   })
 
   const totalExposure = risks.filter((r) => r.status === 'OPEN').reduce((sum, r) => sum + (r.costImpact ?? 0), 0)
@@ -170,8 +179,8 @@ export default function RisksPage() {
       ) : risks.length === 0 ? (
         <EmptyState title="No risks logged" description="Add risks to track probability, cost impact, and mitigation actions." action={<Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>Add Risk</Button>} />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-20">Risk ID</th>
@@ -205,7 +214,7 @@ export default function RisksPage() {
                     {canEdit && (
                       <div className="flex items-center gap-1">
                         <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => { if (confirm(`Delete ${r.riskId}?`)) deleteMutation.mutate(r.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => setDeleting(r)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     )}
                   </td>
@@ -215,6 +224,15 @@ export default function RisksPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title={`Delete ${deleting?.riskId}?`}
+        message={`"${deleting?.description?.slice(0, 80)}" will be permanently removed from the register. This action is recorded in the audit trail.`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleting && deleteMutation.mutate(deleting.id)}
+        onCancel={() => setDeleting(null)}
+      />
 
       <Modal open={modalOpen} onClose={closeModal} title={editing ? `Edit ${editing.riskId}` : 'New Risk Item'} size="lg">
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">

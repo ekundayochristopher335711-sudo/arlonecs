@@ -63,7 +63,7 @@ export default function AuditLogPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-thin">
         {isLoading ? (
           <div className="divide-y divide-slate-50">
             {[1,2,3,4,5].map((i) => <div key={i} className="h-14 animate-pulse bg-slate-50 m-4 rounded" />)}
@@ -75,7 +75,7 @@ export default function AuditLogPage() {
           </div>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[720px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">Timestamp</th>
