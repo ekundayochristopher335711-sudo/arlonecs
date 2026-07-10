@@ -2,10 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+# tsx + prisma are needed at runtime (the app runs from TypeScript source)
+RUN npm ci
 COPY . .
-RUN npm run db:generate
-RUN npm run build
+RUN npx prisma generate
 
 EXPOSE 5000
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && npx tsx src/index.ts"]

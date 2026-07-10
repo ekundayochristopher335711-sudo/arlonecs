@@ -87,8 +87,19 @@ export default function CompensationEventsPage() {
   const closeModal = () => { setModalOpen(false); setEditing(null); reset({ dateNotified: new Date().toISOString().split('T')[0] }) }
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      editing ? updateCE(projectId!, editing.id, data) : createCE(projectId!, data),
+    mutationFn: (data: FormData) => {
+      const payload = {
+        title: data.title,
+        description: data.description,
+        dateNotified: data.dateNotified,
+        clauseRef: data.clauseRef || undefined,
+        // On edit, empty values clear the field (null); on create they are simply omitted
+        dateResponseDue: data.dateResponseDue || (editing ? null : undefined),
+        valuationAmount: data.valuationAmount ? Number(data.valuationAmount) : (editing ? null : undefined),
+        status: data.status,
+      }
+      return editing ? updateCE(projectId!, editing.id, payload) : createCE(projectId!, payload)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ces', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })
@@ -139,7 +150,7 @@ export default function CompensationEventsPage() {
       {isLoading ? (
         <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="h-20 rounded-xl bg-slate-100 animate-pulse" />)}</div>
       ) : ces.length === 0 ? (
-        <EmptyState title="No compensation events" description="Log compensation events following NEC clause 60 onwards." action={<Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New CE</Button>} />
+        <EmptyState title="No compensation events" description="Log compensation events following NEC clause 60 onwards." action={canEdit ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New CE</Button> : undefined} />
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -211,8 +222,14 @@ export default function CompensationEventsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Valuation Amount (£)" type="number" placeholder="25000" {...register('valuationAmount')} />
-            {editing && <Select label="Status" options={statusOptions} {...register('status')} />}
+            {/* NEC workflow is forward-only — earlier stages are not offered */}
+            {editing && <Select label="Status" options={statusOptions.filter((o) => NEC_WORKFLOW.indexOf(o.value) >= NEC_WORKFLOW.indexOf(editing.status))} {...register('status')} />}
           </div>
+          {!editing && (
+            <p className="text-xs text-slate-400">
+              If no response date is set, the NEC4 cl. 61.4 one-week reply period is applied automatically.
+            </p>
+          )}
           {mutation.error && <p className="text-sm text-red-600">Save failed. Please try again.</p>}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>

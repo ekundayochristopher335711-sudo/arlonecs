@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { getProject } from '../../api/projects'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
-import { useAuthStore } from '../../store/authStore'
+import { useProjectRole } from '../../hooks/useProjectRole'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import { format, parseISO } from 'date-fns'
@@ -28,7 +28,7 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const user = useAuthStore((s) => s.user)
+  const { canEdit } = useProjectRole()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
 
@@ -41,7 +41,7 @@ export default function ProjectDetailPage() {
   const { data: pendingInvites = [] } = useQuery({
     queryKey: ['invitations', projectId],
     queryFn: () => getInvitations(projectId!),
-    enabled: !!projectId && (user?.role === 'ADMIN' || user?.role === 'COMMERCIAL_MANAGER'),
+    enabled: !!projectId && canEdit,
   })
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<InviteForm>({
@@ -63,7 +63,8 @@ export default function ProjectDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', projectId] }),
   })
 
-  const canInvite = user?.role === 'ADMIN' || user?.role === 'COMMERCIAL_MANAGER'
+  // Invitation rights follow the user's role ON THIS PROJECT, not their global role
+  const canInvite = canEdit
 
   if (isLoading) return <div className="text-slate-400 py-12 text-center">Loading…</div>
   if (!project) return null

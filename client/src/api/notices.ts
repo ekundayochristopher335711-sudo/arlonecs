@@ -6,7 +6,17 @@ const base = (pid: string) => `/projects/${pid}/notices`
 export const getNotices = (projectId: string, params?: { type?: string; ceId?: string }) =>
   api.get<Notice[]>(base(projectId), { params }).then((r) => r.data)
 
-export const createNotice = (projectId: string, data: Partial<Notice>) =>
+export interface NoticePayload {
+  title: string
+  content: string
+  type: string
+  issuedTo: string
+  dateIssued: string
+  dueDate?: string
+  ceId?: string
+}
+
+export const createNotice = (projectId: string, data: NoticePayload) =>
   api.post<Notice>(base(projectId), data).then((r) => r.data)
 
 export const deleteNotice = (projectId: string, id: string) =>

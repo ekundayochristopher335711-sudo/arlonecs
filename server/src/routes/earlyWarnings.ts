@@ -2,8 +2,10 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireProjectAccess } from '../middleware/roleCheck'
+import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit, diffObjects } from '../services/auditService'
+import { nextNumber, createWithRetry } from '../services/numberingService'
+import { generateEarlyWarningPDF } from '../services/pdfService'
 
 const router = express.Router()
 
@@ -26,8 +28,8 @@ router.get('/:projectId/early-warnings', authenticate, requireProjectAccess, asy
 
 router.get('/:projectId/early-warnings/:id', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
-    const ew = await prisma.earlyWarning.findUnique({
-      where: { id: req.params.id },
+    const ew = await prisma.earlyWarning.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
       include: { riskItems: true },
     })
     if (!ew) { res.status(404).json({ message: 'Early Warning not found' }); return }
@@ -37,9 +39,33 @@ router.get('/:projectId/early-warnings/:id', authenticate, requireProjectAccess,
   }
 })
 
+// Formal EW notice PDF (NEC cl. 15)
+router.get('/:projectId/early-warnings/:id/pdf', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const ew = await prisma.earlyWarning.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
+    })
+    if (!ew) { res.status(404).json({ message: 'Early Warning not found' }); return }
+
+    const [project, raisedByUser] = await Promise.all([
+      prisma.project.findUnique({ where: { id: req.params.projectId } }),
+      prisma.user.findUnique({ where: { id: ew.raisedBy }, select: { name: true } }),
+    ])
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'EarlyWarning', entityId: ew.id, action: 'EXPORT', ipAddress: req.ip })
+    generateEarlyWarningPDF(
+      res,
+      { ...ew, raisedBy: raisedByUser?.name ?? ew.raisedBy } as unknown as Record<string, unknown>,
+      project?.name || 'Project',
+    )
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 router.post('/:projectId/early-warnings',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   body('title').notEmpty().trim(),
   body('description').notEmpty().trim(),
   body('dateRaised').isISO8601(),
@@ -48,22 +74,22 @@ router.post('/:projectId/early-warnings',
     if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
 
     try {
-      const count = await prisma.earlyWarning.count({ where: { projectId: req.params.projectId } })
-      const ewNumber = `EW-${String(count + 1).padStart(3, '0')}`
-
       const { title, description, assignedTo, dateRaised, dateRequired } = req.body
-      const ew = await prisma.earlyWarning.create({
-        data: {
-          ewNumber,
-          projectId: req.params.projectId,
-          title,
-          description,
-          assignedTo: assignedTo || null,
-          dateRaised: new Date(dateRaised),
-          dateRequired: dateRequired ? new Date(dateRequired) : null,
-          raisedBy: req.user!.id,
-        },
-        include: { riskItems: true },
+      const ew = await createWithRetry(async () => {
+        const ewNumber = await nextNumber('earlyWarning', req.params.projectId, 'EW')
+        return prisma.earlyWarning.create({
+          data: {
+            ewNumber,
+            projectId: req.params.projectId,
+            title,
+            description,
+            assignedTo: assignedTo || null,
+            dateRaised: new Date(dateRaised),
+            dateRequired: dateRequired ? new Date(dateRequired) : null,
+            raisedBy: req.user!.id,
+          },
+          include: { riskItems: true },
+        })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'EarlyWarning', entityId: ew.id, action: 'CREATE', ipAddress: req.ip })
       res.status(201).json(ew)
@@ -76,14 +102,19 @@ router.post('/:projectId/early-warnings',
 router.put('/:projectId/early-warnings/:id',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   async (req: AuthRequest, res): Promise<void> => {
     try {
-      const existing = await prisma.earlyWarning.findUnique({ where: { id: req.params.id } })
+      const existing = await prisma.earlyWarning.findFirst({
+        where: { id: req.params.id, projectId: req.params.projectId },
+      })
       if (!existing) { res.status(404).json({ message: 'Early Warning not found' }); return }
 
       const { id, ewNumber, projectId, createdAt, updatedAt, raisedBy, riskItems, ...updateData } = req.body
       if (updateData.dateRaised) updateData.dateRaised = new Date(updateData.dateRaised)
-      if (updateData.dateRequired) updateData.dateRequired = new Date(updateData.dateRequired)
+      if (updateData.dateRequired !== undefined) {
+        updateData.dateRequired = updateData.dateRequired ? new Date(updateData.dateRequired) : null
+      }
 
       const ew = await prisma.earlyWarning.update({
         where: { id: req.params.id },
@@ -101,10 +132,15 @@ router.put('/:projectId/early-warnings/:id',
   },
 )
 
-router.delete('/:projectId/early-warnings/:id', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+router.delete('/:projectId/early-warnings/:id', authenticate, requireProjectAccess, requireProjectRole('ADMIN'), async (req: AuthRequest, res): Promise<void> => {
   try {
+    const existing = await prisma.earlyWarning.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
+    })
+    if (!existing) { res.status(404).json({ message: 'Early Warning not found' }); return }
+
     await prisma.earlyWarning.delete({ where: { id: req.params.id } })
-    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'EarlyWarning', entityId: req.params.id, action: 'DELETE', ipAddress: req.ip })
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'EarlyWarning', entityId: req.params.id, action: 'DELETE', changes: { record: { old: `${existing.ewNumber}: ${existing.title}`, new: null } }, ipAddress: req.ip })
     res.status(204).send()
   } catch {
     res.status(500).json({ message: 'Server error' })

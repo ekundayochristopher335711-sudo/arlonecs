@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileDown } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { getEarlyWarnings, createEarlyWarning, updateEarlyWarning, deleteEarlyWarning } from '../../api/earlyWarnings'
+import { getEarlyWarnings, createEarlyWarning, updateEarlyWarning, deleteEarlyWarning, downloadEarlyWarningPDF } from '../../api/earlyWarnings'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
@@ -115,7 +115,7 @@ export default function EarlyWarningsPage() {
         <EmptyState
           title="No early warnings"
           description="Log the first early warning under NEC clause 15.1"
-          action={<Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Early Warning</Button>}
+          action={canEdit ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Early Warning</Button> : undefined}
         />
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -146,12 +146,15 @@ export default function EarlyWarningsPage() {
                   <td className="px-4 py-3"><StatusBadge status={ew.status} /></td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{ew.riskItems?.length ?? 0}</td>
                   <td className="px-4 py-3">
-                    {canEdit && (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(ew)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => { if (confirm(`Delete ${ew.ewNumber}?`)) deleteMutation.mutate(ew.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber)} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
+                      {canEdit && (
+                        <>
+                          <button onClick={() => openEdit(ew)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                          <button onClick={() => { if (confirm(`Delete ${ew.ewNumber}?`)) deleteMutation.mutate(ew.id) }} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

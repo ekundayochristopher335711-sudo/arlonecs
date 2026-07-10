@@ -3,13 +3,36 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+// One-time rename of legacy Aurum-branded accounts to the Arlonecs domain,
+// preserving passwords and project memberships (no duplicate users).
+async function migrateLegacyEmails() {
+  const renames: Array<[string, string]> = [
+    ['admin@aurum.com', 'admin@arlonecs.com'],
+    ['manager@aurum.com', 'manager@arlonecs.com'],
+  ]
+  for (const [oldEmail, newEmail] of renames) {
+    const legacy = await prisma.user.findUnique({ where: { email: oldEmail } })
+    if (!legacy) continue
+    const target = await prisma.user.findUnique({ where: { email: newEmail } })
+    if (target) {
+      // New account already exists — retire the legacy one
+      await prisma.user.update({ where: { id: legacy.id }, data: { isActive: false } })
+    } else {
+      await prisma.user.update({ where: { id: legacy.id }, data: { email: newEmail } })
+    }
+    console.log(`Migrated legacy account ${oldEmail} → ${newEmail}`)
+  }
+}
+
 async function main() {
+  await migrateLegacyEmails()
+
   const adminPassword = await bcrypt.hash('ARLOTECH', 12)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@aurum.com' },
+    where: { email: 'admin@arlonecs.com' },
     update: { password: adminPassword },
     create: {
-      email: 'admin@aurum.com',
+      email: 'admin@arlonecs.com',
       password: adminPassword,
       name: 'System Admin',
       role: Role.ADMIN,
@@ -18,10 +41,10 @@ async function main() {
 
   const cmPassword = await bcrypt.hash('Manager1234!', 12)
   const cm = await prisma.user.upsert({
-    where: { email: 'manager@aurum.com' },
+    where: { email: 'manager@arlonecs.com' },
     update: {},
     create: {
-      email: 'manager@aurum.com',
+      email: 'manager@arlonecs.com',
       password: cmPassword,
       name: 'Commercial Manager',
       role: Role.COMMERCIAL_MANAGER,
@@ -37,7 +60,7 @@ async function main() {
       description: 'Major highway infrastructure project under NEC4 ECC contract',
       contractType: ContractType.NEC4,
       clientName: 'National Highways',
-      contractorName: 'Aurum Civil Engineering Ltd',
+      contractorName: 'Arlonecs Civil Engineering Ltd',
       contractValue: 45000000,
       startDate: new Date('2024-01-15'),
       endDate: new Date('2026-06-30'),
@@ -51,8 +74,8 @@ async function main() {
   })
 
   console.log('Seed complete.')
-  console.log('Admin login: admin@aurum.com / ARLOTECH')
-  console.log('Manager login: manager@aurum.com / Manager1234!')
+  console.log('Admin login: admin@arlonecs.com / ARLOTECH')
+  console.log('Manager login: manager@arlonecs.com / Manager1234!')
   console.log('Demo project:', project.name)
 }
 

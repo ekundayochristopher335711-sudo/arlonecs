@@ -2,8 +2,9 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireProjectAccess } from '../middleware/roleCheck'
+import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit, diffObjects } from '../services/auditService'
+import { nextNumber, createWithRetry } from '../services/numberingService'
 
 const router = express.Router()
 
@@ -26,8 +27,8 @@ router.get('/:projectId/risks', authenticate, requireProjectAccess, async (req: 
 
 router.get('/:projectId/risks/:id', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
-    const risk = await prisma.riskItem.findUnique({
-      where: { id: req.params.id },
+    const risk = await prisma.riskItem.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
       include: { earlyWarning: true },
     })
     if (!risk) { res.status(404).json({ message: 'Risk not found' }); return }
@@ -40,6 +41,7 @@ router.get('/:projectId/risks/:id', authenticate, requireProjectAccess, async (r
 router.post('/:projectId/risks',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   body('description').notEmpty().trim(),
   body('probability').isInt({ min: 1, max: 5 }),
   async (req: AuthRequest, res): Promise<void> => {
@@ -47,23 +49,30 @@ router.post('/:projectId/risks',
     if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
 
     try {
-      const count = await prisma.riskItem.count({ where: { projectId: req.params.projectId } })
-      const riskId = `R-${String(count + 1).padStart(3, '0')}`
-
       const { description, probability, costImpact, timeImpact, mitigation, owner, earlyWarningId } = req.body
-      const risk = await prisma.riskItem.create({
-        data: {
-          riskId,
-          projectId: req.params.projectId,
-          description,
-          probability: Number(probability),
-          costImpact: costImpact ? Number(costImpact) : null,
-          timeImpact: timeImpact ? Number(timeImpact) : null,
-          mitigation: mitigation || null,
-          owner: owner || null,
-          earlyWarningId: earlyWarningId || null,
-        },
-        include: { earlyWarning: { select: { id: true, ewNumber: true, title: true } } },
+
+      // A linked EW must belong to the same project
+      if (earlyWarningId) {
+        const ew = await prisma.earlyWarning.findFirst({ where: { id: earlyWarningId, projectId: req.params.projectId } })
+        if (!ew) { res.status(400).json({ message: 'Linked Early Warning not found in this project' }); return }
+      }
+
+      const risk = await createWithRetry(async () => {
+        const riskId = await nextNumber('riskItem', req.params.projectId, 'R')
+        return prisma.riskItem.create({
+          data: {
+            riskId,
+            projectId: req.params.projectId,
+            description,
+            probability: Number(probability),
+            costImpact: costImpact !== undefined && costImpact !== null && costImpact !== '' ? Number(costImpact) : null,
+            timeImpact: timeImpact !== undefined && timeImpact !== null && timeImpact !== '' ? Number(timeImpact) : null,
+            mitigation: mitigation || null,
+            owner: owner || null,
+            earlyWarningId: earlyWarningId || null,
+          },
+          include: { earlyWarning: { select: { id: true, ewNumber: true, title: true } } },
+        })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskItem', entityId: risk.id, action: 'CREATE', ipAddress: req.ip })
       res.status(201).json(risk)
@@ -76,15 +85,22 @@ router.post('/:projectId/risks',
 router.put('/:projectId/risks/:id',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   async (req: AuthRequest, res): Promise<void> => {
     try {
-      const existing = await prisma.riskItem.findUnique({ where: { id: req.params.id } })
+      const existing = await prisma.riskItem.findFirst({
+        where: { id: req.params.id, projectId: req.params.projectId },
+      })
       if (!existing) { res.status(404).json({ message: 'Risk not found' }); return }
 
       const { id, riskId, projectId, createdAt, updatedAt, earlyWarning, ...updateData } = req.body
-      if (updateData.probability) updateData.probability = Number(updateData.probability)
-      if (updateData.costImpact) updateData.costImpact = Number(updateData.costImpact)
-      if (updateData.timeImpact) updateData.timeImpact = Number(updateData.timeImpact)
+      if (updateData.probability !== undefined) updateData.probability = Number(updateData.probability)
+      if (updateData.costImpact !== undefined) {
+        updateData.costImpact = updateData.costImpact === null || updateData.costImpact === '' ? null : Number(updateData.costImpact)
+      }
+      if (updateData.timeImpact !== undefined) {
+        updateData.timeImpact = updateData.timeImpact === null || updateData.timeImpact === '' ? null : Number(updateData.timeImpact)
+      }
 
       const risk = await prisma.riskItem.update({
         where: { id: req.params.id },
@@ -102,10 +118,15 @@ router.put('/:projectId/risks/:id',
   },
 )
 
-router.delete('/:projectId/risks/:id', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+router.delete('/:projectId/risks/:id', authenticate, requireProjectAccess, requireProjectRole('ADMIN'), async (req: AuthRequest, res): Promise<void> => {
   try {
+    const existing = await prisma.riskItem.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
+    })
+    if (!existing) { res.status(404).json({ message: 'Risk not found' }); return }
+
     await prisma.riskItem.delete({ where: { id: req.params.id } })
-    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskItem', entityId: req.params.id, action: 'DELETE', ipAddress: req.ip })
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskItem', entityId: req.params.id, action: 'DELETE', changes: { record: { old: `${existing.riskId}: ${existing.description.slice(0, 80)}`, new: null } }, ipAddress: req.ip })
     res.status(204).send()
   } catch {
     res.status(500).json({ message: 'Server error' })

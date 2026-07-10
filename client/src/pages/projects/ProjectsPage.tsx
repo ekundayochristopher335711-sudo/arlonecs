@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { getProjects, createProject } from '../../api/projects'
+import { useAuthStore } from '../../store/authStore'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import Input from '../../components/ui/Input'
@@ -55,6 +56,9 @@ function ProjectCard({ project }: { project: Project }) {
 export default function ProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const queryClient = useQueryClient()
+  const user = useAuthStore((s) => s.user)
+  // Global VIEWERs (invitation-only accounts) cannot create projects
+  const canCreate = user?.role === 'ADMIN' || user?.role === 'COMMERCIAL_MANAGER'
   const { data: projects = [], isLoading } = useQuery({ queryKey: ['projects'], queryFn: getProjects })
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -81,7 +85,7 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-navy-900">Projects</h1>
           <p className="text-sm text-slate-500 mt-0.5">{projects.length} active project{projects.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button>
+        {canCreate && <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button>}
       </div>
 
       {isLoading ? (
@@ -89,7 +93,7 @@ export default function ProjectsPage() {
           {[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-xl bg-slate-100 animate-pulse" />)}
         </div>
       ) : projects.length === 0 ? (
-        <EmptyState title="No projects yet" description="Create your first NEC project to get started." action={<Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button>} />
+        <EmptyState title="No projects yet" description={canCreate ? 'Create your first NEC project to get started.' : 'Projects you are invited to will appear here.'} action={canCreate ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button> : undefined} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((p) => <ProjectCard key={p.id} project={p} />)}
@@ -105,7 +109,7 @@ export default function ProjectsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Client Name" placeholder="National Highways" {...register('clientName')} />
-            <Input label="Contractor Name" placeholder="Aurum Civil Ltd" {...register('contractorName')} />
+            <Input label="Contractor Name" placeholder="Arlonecs Civil Ltd" {...register('contractorName')} />
           </div>
           <Textarea label="Description" placeholder="Brief project overview…" rows={3} {...register('description')} />
           {mutation.error && <p className="text-sm text-red-600">Failed to create project. Please try again.</p>}

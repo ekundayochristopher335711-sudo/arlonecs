@@ -3,8 +3,9 @@ import ExcelJS from 'exceljs'
 import multer from 'multer'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireProjectAccess } from '../middleware/roleCheck'
+import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
+import { nextNumber } from '../services/numberingService'
 
 const router = express.Router()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
@@ -57,7 +58,7 @@ router.get('/:projectId/exports/risks', authenticate, requireProjectAccess, asyn
     })
 
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Aurum Project Controls'
+    wb.creator = 'Arlonecs Project Controls'
     wb.created = new Date()
 
     const ws = wb.addWorksheet('Risk Register', { pageSetup: { orientation: 'landscape', fitToPage: true } })
@@ -131,7 +132,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
     })
 
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Aurum Project Controls'
+    wb.creator = 'Arlonecs Project Controls'
 
     const ws = wb.addWorksheet('CE Summary', { pageSetup: { orientation: 'landscape', fitToPage: true } })
     addTitleRow(ws, `Compensation Event Summary — ${project?.name}`, 8)
@@ -198,18 +199,21 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
 router.post('/:projectId/imports/risks',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   upload.single('file'),
   async (req: AuthRequest, res): Promise<void> => {
     if (!req.file) { res.status(400).json({ message: 'No file uploaded' }); return }
 
     try {
       const wb = new ExcelJS.Workbook()
-      await wb.xlsx.load(req.file.buffer)
+      await wb.xlsx.load(req.file.buffer as unknown as ArrayBuffer)
       const ws = wb.worksheets[0]
 
       const imported: string[] = []
       const errors: string[] = []
-      let count = await prisma.riskItem.count({ where: { projectId: req.params.projectId } })
+      // Start numbering from the highest existing reference (deletion-safe)
+      const nextRef = await nextNumber('riskItem', req.params.projectId, 'R')
+      let count = parseInt(nextRef.replace(/\D/g, ''), 10) - 1
 
       ws.eachRow((row, rowNum) => {
         if (rowNum <= 3) return // skip title + blank + header rows

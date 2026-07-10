@@ -17,3 +17,13 @@ export const updateEarlyWarning = (projectId: string, id: string, data: Partial<
 
 export const deleteEarlyWarning = (projectId: string, id: string) =>
   api.delete(`${base(projectId)}/${id}`)
+
+export const downloadEarlyWarningPDF = async (projectId: string, id: string, ewNumber: string) => {
+  const res = await api.get(`${base(projectId)}/${id}/pdf`, { responseType: 'blob' })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${ewNumber}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}

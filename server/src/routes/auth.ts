@@ -1,14 +1,26 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import rateLimit from 'express-rate-limit'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
 import { logAudit } from '../services/auditService'
+import { sendPasswordResetEmail } from '../services/emailService'
 
 const router = express.Router()
 
+// Brute-force protection on credential endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many attempts. Please try again in 15 minutes.' },
+})
+
 router.post('/register',
+  authLimiter,
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('name').notEmpty().trim(),
@@ -16,14 +28,17 @@ router.post('/register',
     const errors = validationResult(req)
     if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
 
-    const { email, password, name, role } = req.body
+    const { email, password, name } = req.body
     try {
       const existing = await prisma.user.findUnique({ where: { email } })
       if (existing) { res.status(409).json({ message: 'Email already registered' }); return }
 
       const hashed = await bcrypt.hash(password, 12)
+      // Role is NEVER taken from the request body. Self-registered users are
+      // COMMERCIAL_MANAGER so they can create and administer their own projects;
+      // access to any other project still requires membership.
       const user = await prisma.user.create({
-        data: { email, password: hashed, name, role: role || 'VIEWER' },
+        data: { email, password: hashed, name, role: 'COMMERCIAL_MANAGER' },
         select: { id: true, email: true, name: true, role: true, createdAt: true },
       })
 
@@ -41,6 +56,7 @@ router.post('/register',
 )
 
 router.post('/login',
+  authLimiter,
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty(),
   async (req, res): Promise<void> => {
@@ -61,6 +77,59 @@ router.post('/login',
         { expiresIn: '24h' },
       )
       res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token })
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
+// ── Password reset ────────────────────────────────────────────────────────────
+router.post('/forgot-password',
+  authLimiter,
+  body('email').isEmail().normalizeEmail(),
+  async (req, res): Promise<void> => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
+
+    try {
+      const user = await prisma.user.findUnique({ where: { email: req.body.email } })
+      // Always return 200 — never reveal whether an email is registered
+      if (user && user.isActive) {
+        await prisma.passwordReset.deleteMany({ where: { userId: user.id, usedAt: null } })
+        const reset = await prisma.passwordReset.create({
+          data: { userId: user.id, expiresAt: new Date(Date.now() + 60 * 60 * 1000) }, // 1 hour
+        })
+        sendPasswordResetEmail(user.email, user.name, reset.token).catch(console.error)
+      }
+      res.json({ message: 'If that email is registered, a reset link has been sent.' })
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
+router.post('/reset-password',
+  authLimiter,
+  body('token').notEmpty(),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  async (req, res): Promise<void> => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
+
+    try {
+      const reset = await prisma.passwordReset.findUnique({ where: { token: req.body.token } })
+      if (!reset || reset.usedAt || reset.expiresAt < new Date()) {
+        res.status(410).json({ message: 'This reset link is invalid or has expired.' })
+        return
+      }
+
+      const hashed = await bcrypt.hash(req.body.password, 12)
+      await prisma.$transaction([
+        prisma.user.update({ where: { id: reset.userId }, data: { password: hashed } }),
+        prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
+      ])
+      await logAudit({ userId: reset.userId, entityType: 'User', entityId: reset.userId, action: 'UPDATE', changes: { password: { old: '[redacted]', new: '[redacted]' } }, ipAddress: req.ip })
+      res.json({ message: 'Password updated. You can now sign in.' })
     } catch {
       res.status(500).json({ message: 'Server error' })
     }

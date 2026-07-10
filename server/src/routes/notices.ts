@@ -2,9 +2,12 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireProjectAccess } from '../middleware/roleCheck'
+import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
-import { generateEarlyWarningPDF } from '../services/pdfService'
+import { generateNoticePDF } from '../services/pdfService'
+import { nextNumber, createWithRetry } from '../services/numberingService'
+
+const NOTICE_TYPES = ['EARLY_WARNING', 'COMPENSATION_EVENT', 'INSTRUCTION', 'ACCEPTANCE', 'REJECTION', 'QUOTATION', 'ASSESSMENT', 'GENERAL']
 
 const router = express.Router()
 
@@ -14,7 +17,7 @@ router.get('/:projectId/notices', authenticate, requireProjectAccess, async (req
     const notices = await prisma.notice.findMany({
       where: {
         projectId: req.params.projectId,
-        ...(type ? { type: type as string } : {}),
+        ...(type ? { type: type as 'EARLY_WARNING' | 'COMPENSATION_EVENT' | 'INSTRUCTION' | 'ACCEPTANCE' | 'REJECTION' | 'QUOTATION' | 'ASSESSMENT' | 'GENERAL' } : {}),
         ...(ceId ? { ceId: ceId as string } : {}),
       },
       include: { ce: { select: { id: true, ceNumber: true, title: true } } },
@@ -29,9 +32,10 @@ router.get('/:projectId/notices', authenticate, requireProjectAccess, async (req
 router.post('/:projectId/notices',
   authenticate,
   requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   body('title').notEmpty().trim(),
   body('content').notEmpty().trim(),
-  body('type').notEmpty(),
+  body('type').isIn(NOTICE_TYPES),
   body('issuedTo').notEmpty().trim(),
   body('dateIssued').isISO8601(),
   async (req: AuthRequest, res): Promise<void> => {
@@ -39,24 +43,31 @@ router.post('/:projectId/notices',
     if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
 
     try {
-      const count = await prisma.notice.count({ where: { projectId: req.params.projectId } })
-      const noticeNumber = `N-${String(count + 1).padStart(3, '0')}`
-
       const { title, content, type, issuedTo, ceId, dateIssued, dueDate } = req.body
-      const notice = await prisma.notice.create({
-        data: {
-          noticeNumber,
-          projectId: req.params.projectId,
-          title,
-          content,
-          type,
-          issuedBy: req.user!.id,
-          issuedTo,
-          ceId: ceId || null,
-          dateIssued: new Date(dateIssued),
-          dueDate: dueDate ? new Date(dueDate) : null,
-        },
-        include: { ce: { select: { id: true, ceNumber: true, title: true } } },
+
+      // A linked CE must belong to the same project
+      if (ceId) {
+        const ce = await prisma.compensationEvent.findFirst({ where: { id: ceId, projectId: req.params.projectId } })
+        if (!ce) { res.status(400).json({ message: 'Linked CE not found in this project' }); return }
+      }
+
+      const notice = await createWithRetry(async () => {
+        const noticeNumber = await nextNumber('notice', req.params.projectId, 'N')
+        return prisma.notice.create({
+          data: {
+            noticeNumber,
+            projectId: req.params.projectId,
+            title,
+            content,
+            type,
+            issuedBy: req.user!.id,
+            issuedTo,
+            ceId: ceId || null,
+            dateIssued: new Date(dateIssued),
+            dueDate: dueDate ? new Date(dueDate) : null,
+          },
+          include: { ce: { select: { id: true, ceNumber: true, title: true } } },
+        })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Notice', entityId: notice.id, action: 'CREATE', ipAddress: req.ip })
       res.status(201).json(notice)
@@ -68,24 +79,36 @@ router.post('/:projectId/notices',
 
 router.get('/:projectId/notices/:id/pdf', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
-    const notice = await prisma.notice.findUnique({
-      where: { id: req.params.id },
+    const notice = await prisma.notice.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
       include: { ce: true },
     })
     if (!notice) { res.status(404).json({ message: 'Notice not found' }); return }
 
-    const project = await prisma.project.findUnique({ where: { id: req.params.projectId } })
+    const [project, issuer] = await Promise.all([
+      prisma.project.findUnique({ where: { id: req.params.projectId } }),
+      prisma.user.findUnique({ where: { id: notice.issuedBy }, select: { name: true } }),
+    ])
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Notice', entityId: notice.id, action: 'EXPORT', ipAddress: req.ip })
-    generateEarlyWarningPDF(res, notice as unknown as Record<string, unknown>, project?.name || 'Project')
+    generateNoticePDF(
+      res,
+      { ...notice, issuedBy: issuer?.name ?? notice.issuedBy } as unknown as Record<string, unknown>,
+      project?.name || 'Project',
+    )
   } catch {
     res.status(500).json({ message: 'Server error' })
   }
 })
 
-router.delete('/:projectId/notices/:id', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+router.delete('/:projectId/notices/:id', authenticate, requireProjectAccess, requireProjectRole('ADMIN'), async (req: AuthRequest, res): Promise<void> => {
   try {
+    const existing = await prisma.notice.findFirst({
+      where: { id: req.params.id, projectId: req.params.projectId },
+    })
+    if (!existing) { res.status(404).json({ message: 'Notice not found' }); return }
+
     await prisma.notice.delete({ where: { id: req.params.id } })
-    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Notice', entityId: req.params.id, action: 'DELETE', ipAddress: req.ip })
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Notice', entityId: req.params.id, action: 'DELETE', changes: { record: { old: `${existing.noticeNumber}: ${existing.title}`, new: null } }, ipAddress: req.ip })
     res.status(204).send()
   } catch {
     res.status(500).json({ message: 'Server error' })

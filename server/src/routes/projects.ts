@@ -2,7 +2,7 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireRole, requireProjectAccess } from '../middleware/roleCheck'
+import { requireRole, requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
 
 const router = express.Router()
@@ -91,7 +91,7 @@ router.get('/:projectId', authenticate, requireProjectAccess, async (req: AuthRe
 router.put('/:projectId',
   authenticate,
   requireProjectAccess,
-  requireRole('ADMIN', 'COMMERCIAL_MANAGER'),
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   async (req: AuthRequest, res): Promise<void> => {
     try {
       const { id, members, _count, createdAt, updatedAt, ...updateData } = req.body
@@ -109,9 +109,13 @@ router.put('/:projectId',
 router.post('/:projectId/members',
   authenticate,
   requireProjectAccess,
-  requireRole('ADMIN'),
+  requireProjectRole('ADMIN'),
   async (req: AuthRequest, res): Promise<void> => {
     const { userId, role } = req.body
+    if (!['ADMIN', 'COMMERCIAL_MANAGER', 'VIEWER'].includes(role)) {
+      res.status(400).json({ message: 'Invalid role' })
+      return
+    }
     try {
       const member = await prisma.projectMember.upsert({
         where: { userId_projectId: { userId, projectId: req.params.projectId } },

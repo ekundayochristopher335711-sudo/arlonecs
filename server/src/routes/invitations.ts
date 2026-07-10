@@ -1,26 +1,22 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { body, validationResult } from 'express-validator'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { requireProjectAccess, requireRole } from '../middleware/roleCheck'
+import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
-import nodemailer from 'nodemailer'
+import { sendInvitationEmail } from '../services/emailService'
 
+// Project-scoped router → mounted at /api/projects
 const router = express.Router()
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-})
+// Public router (token flows, no auth) → mounted at /api/invitations
+export const publicRouter = express.Router()
 
 // ── Send invitation ───────────────────────────────────────────────────────────
 router.post('/:projectId/invitations',
   authenticate,
   requireProjectAccess,
-  requireRole('ADMIN', 'COMMERCIAL_MANAGER'),
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   body('email').isEmail().normalizeEmail(),
   body('role').isIn(['ADMIN', 'COMMERCIAL_MANAGER', 'VIEWER']),
   async (req: AuthRequest, res): Promise<void> => {
@@ -56,40 +52,7 @@ router.post('/:projectId/invitations',
       const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/accept-invitation/${invitation.token}`
       const inviter = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { name: true } })
 
-      // Send email if configured
-      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-        await transporter.sendMail({
-          from: `"Aurum Project Controls" <${process.env.SMTP_USER}>`,
-          to: email,
-          subject: `You've been invited to ${project.name} — Aurum Project Controls`,
-          html: `
-            <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto">
-              <div style="background:#080F1C;padding:24px 28px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:12px">
-                <div>
-                  <h2 style="color:#FFFFFF;margin:0;font-size:18px">Aurum Project Controls</h2>
-                  <p style="color:#6EE7B7;margin:4px 0 0;font-size:12px">NEC Contract Workflow Engine</p>
-                </div>
-              </div>
-              <div style="background:#fff;padding:32px 28px;border:1px solid #E5E7EB;border-top:none;border-radius:0 0 12px 12px">
-                <h3 style="color:#080F1C;font-size:20px;margin:0 0 8px">You're invited</h3>
-                <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
-                  <strong>${inviter?.name ?? 'A team member'}</strong> has invited you to join
-                  <strong>${project.name}</strong> as a <strong>${role.replace('_', ' ')}</strong>.
-                </p>
-                <a href="${inviteUrl}"
-                   style="display:inline-block;background:linear-gradient(135deg,#6EE7B7,#FDE68A);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
-                  Accept Invitation
-                </a>
-                <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
-                  This invitation expires in 7 days. If you weren't expecting this, you can ignore this email.
-                </p>
-                <p style="color:#D1D5DB;font-size:11px;margin:8px 0 0">
-                  Or copy this link: ${inviteUrl}
-                </p>
-              </div>
-            </div>`,
-        })
-      }
+      await sendInvitationEmail(email, inviter?.name ?? 'A team member', project.name, role, inviteUrl)
 
       await logAudit({ userId: req.user!.id, projectId, entityType: 'Invitation', entityId: invitation.id, action: 'CREATE', ipAddress: req.ip })
       res.status(201).json({ message: `Invitation sent to ${email}`, token: invitation.token })
@@ -104,7 +67,7 @@ router.post('/:projectId/invitations',
 router.get('/:projectId/invitations',
   authenticate,
   requireProjectAccess,
-  requireRole('ADMIN', 'COMMERCIAL_MANAGER'),
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
   async (req: AuthRequest, res): Promise<void> => {
     try {
       const invitations = await prisma.invitation.findMany({
@@ -118,8 +81,26 @@ router.get('/:projectId/invitations',
   },
 )
 
-// ── Accept invitation (public — no auth required) ────────────────────────────
-router.get('/invitations/:token', async (req, res): Promise<void> => {
+// ── Revoke invitation (scoped to the project) ────────────────────────────────
+router.delete('/:projectId/invitations/:id',
+  authenticate,
+  requireProjectAccess,
+  requireProjectRole('ADMIN', 'COMMERCIAL_MANAGER'),
+  async (req: AuthRequest, res): Promise<void> => {
+    try {
+      const { count } = await prisma.invitation.deleteMany({
+        where: { id: req.params.id, projectId: req.params.projectId },
+      })
+      if (count === 0) { res.status(404).json({ message: 'Invitation not found' }); return }
+      res.status(204).send()
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
+// ── Public: preview invitation (no auth) ─────────────────────────────────────
+publicRouter.get('/:token', async (req, res): Promise<void> => {
   try {
     const invitation = await prisma.invitation.findUnique({
       where: { token: req.params.token },
@@ -140,10 +121,11 @@ router.get('/invitations/:token', async (req, res): Promise<void> => {
   }
 })
 
-router.post('/invitations/:token/accept',
+// ── Public: accept invitation (no auth) ──────────────────────────────────────
+publicRouter.post('/:token/accept',
   body('name').notEmpty().trim(),
   body('password').isLength({ min: 8 }),
-  async (req, res): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
 
@@ -158,12 +140,14 @@ router.post('/invitations/:token/accept',
 
       let user = await prisma.user.findUnique({ where: { email: invitation.email } })
       if (!user) {
+        // The invitation role applies to THIS PROJECT ONLY. The global role is
+        // always VIEWER — never taken from the invitation (privilege escalation).
         user = await prisma.user.create({
-          data: { email: invitation.email, password: hashed, name, role: invitation.role },
+          data: { email: invitation.email, password: hashed, name, role: 'VIEWER' },
         })
       }
 
-      // Add to project
+      // Add to project with the invited per-project role
       await prisma.projectMember.upsert({
         where: { userId_projectId: { userId: user.id, projectId: invitation.projectId } },
         update: { role: invitation.role },
@@ -180,21 +164,6 @@ router.post('/invitations/:token/accept',
     } catch (e) {
       console.error(e)
       res.status(500).json({ message: 'Failed to accept invitation' })
-    }
-  },
-)
-
-// ── Revoke invitation ─────────────────────────────────────────────────────────
-router.delete('/:projectId/invitations/:id',
-  authenticate,
-  requireProjectAccess,
-  requireRole('ADMIN'),
-  async (req: AuthRequest, res): Promise<void> => {
-    try {
-      await prisma.invitation.delete({ where: { id: req.params.id } })
-      res.status(204).send()
-    } catch {
-      res.status(500).json({ message: 'Server error' })
     }
   },
 )

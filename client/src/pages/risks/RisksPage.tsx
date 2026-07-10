@@ -91,8 +91,20 @@ export default function RisksPage() {
   const closeModal = () => { setModalOpen(false); setEditing(null); reset({ probability: '3' }) }
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      editing ? updateRisk(projectId!, editing.id, data) : createRisk(projectId!, data),
+    mutationFn: (data: FormData) => {
+      const payload = {
+        description: data.description,
+        probability: Number(data.probability),
+        // On edit, empty values clear the field (null); on create they are simply omitted
+        costImpact: data.costImpact ? Number(data.costImpact) : (editing ? null : undefined),
+        timeImpact: data.timeImpact ? Number(data.timeImpact) : (editing ? null : undefined),
+        mitigation: data.mitigation || undefined,
+        owner: data.owner || undefined,
+        earlyWarningId: data.earlyWarningId || (editing ? null : undefined),
+        status: data.status,
+      }
+      return editing ? updateRisk(projectId!, editing.id, payload) : createRisk(projectId!, payload)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risks', projectId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard', projectId] })

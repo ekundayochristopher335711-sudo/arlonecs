@@ -4,7 +4,11 @@ import { Suspense } from 'react'
 import { PageLoader } from './components/ui/LogoSpinner'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage'
+import DocumentsPage from './pages/documents/DocumentsPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailPage from './pages/projects/ProjectDetailPage'
@@ -26,6 +30,9 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
         <Route
           path="/"
@@ -42,6 +49,7 @@ export default function App() {
           <Route path="projects/:projectId/risks" element={<RisksPage />} />
           <Route path="projects/:projectId/compensation-events" element={<CompensationEventsPage />} />
           <Route path="projects/:projectId/notices" element={<NoticesPage />} />
+          <Route path="projects/:projectId/documents" element={<DocumentsPage />} />
           <Route path="projects/:projectId/audit" element={<AuditLogPage />} />
           <Route path="projects/:projectId/dashboard" element={<DashboardPage />} />
           <Route path="projects/:projectId/ce-whatif" element={<CEWhatIfPage />} />

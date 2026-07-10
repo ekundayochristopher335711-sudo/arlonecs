@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -45,9 +45,9 @@ export default function LoginPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Aurum" className="w-10 h-10" />
+            <img src="/logo.svg" alt="Arlonecs" className="w-10 h-10" />
             <div>
-              <p className="text-white font-semibold text-lg leading-none">Aurum</p>
+              <p className="text-white font-semibold text-lg leading-none">Arlonecs</p>
               <p className="text-brand-green text-xs font-medium mt-0.5">Project Controls</p>
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-slate-600 text-xs">
-          © {new Date().getFullYear()} Aurum Project Controls. All rights reserved.
+          © {new Date().getFullYear()} Arlonecs Project Controls. All rights reserved.
         </p>
       </div>
 
@@ -87,8 +87,8 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <img src="/logo.svg" alt="Aurum" className="w-9 h-9" />
-            <p className="font-semibold text-navy-900 text-lg">Aurum Project Controls</p>
+            <img src="/logo.svg" alt="Arlonecs" className="w-9 h-9" />
+            <p className="font-semibold text-navy-900 text-lg">Arlonecs Project Controls</p>
           </div>
 
           <h2 className="text-2xl font-semibold text-slate-900 mb-1">Welcome back</h2>
@@ -124,6 +124,9 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Forgot password?</Link>
+              </div>
             </div>
 
             {serverError && (
@@ -146,7 +149,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-8 text-xs text-slate-400 text-center">
+          <p className="mt-6 text-sm text-slate-500 text-center">
+            New to Arlonecs?{' '}
+            <Link to="/register" className="font-medium text-navy-900 hover:underline">Create an account</Link>
+          </p>
+
+          <p className="mt-4 text-xs text-slate-400 text-center">
             Protected by enterprise-grade security
           </p>
         </div>

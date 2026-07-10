@@ -1,7 +1,7 @@
 import { NavLink, useParams } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, AlertTriangle, ShieldAlert,
-  FileText, Bell, ClipboardList, GitBranch, ChevronRight,
+  FileText, Bell, ClipboardList, GitBranch, Files,
 } from 'lucide-react'
 
 function NavItem({ to, icon: Icon, label, end = false, onClose }: { to: string; icon: React.ElementType; label: string; end?: boolean; onClose?: () => void }) {
@@ -45,6 +45,7 @@ function ProjectNav({ projectId }: { projectId: string }) {
     { to: `${base}/risks`, icon: ShieldAlert, label: 'Risk Register' },
     { to: `${base}/compensation-events`, icon: FileText, label: 'Comp. Events' },
     { to: `${base}/notices`, icon: Bell, label: 'Notices' },
+    { to: `${base}/documents`, icon: Files, label: 'Documents' },
     { to: `${base}/ce-whatif`, icon: GitBranch, label: 'CE What-If' },
     { to: `${base}/audit`, icon: ClipboardList, label: 'Audit Trail' },
   ]
@@ -64,9 +65,9 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Aurum" className="w-8 h-8 shrink-0" />
+          <img src="/logo.svg" alt="Arlonecs" className="w-8 h-8 shrink-0" />
           <div className="min-w-0">
-            <p className="text-white font-semibold text-sm leading-none">Aurum</p>
+            <p className="text-white font-semibold text-sm leading-none">Arlonecs</p>
             <p className="text-slate-500 text-xs mt-0.5 truncate">Project Controls</p>
           </div>
         </div>
