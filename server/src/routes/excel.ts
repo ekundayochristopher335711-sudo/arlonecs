@@ -194,6 +194,60 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
   }
 })
 
+// ─── CSV EXPORTS — universal format, opens on any device ────────────────────
+
+function csvEscape(v: unknown): string {
+  const s = v === null || v === undefined ? '' : String(v)
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+function sendCSV(res: express.Response, filename: string, header: string[], rows: unknown[][]) {
+  // BOM so Excel/Sheets detect UTF-8 correctly
+  const body = '﻿' + [header, ...rows].map((r) => r.map(csvEscape).join(',')).join('\r\n')
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.send(body)
+}
+
+router.get('/:projectId/exports/risks-csv', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const risks = await prisma.riskItem.findMany({
+      where: { projectId: req.params.projectId },
+      include: { earlyWarning: { select: { ewNumber: true } } },
+      orderBy: { riskId: 'asc' },
+    })
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskRegister', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
+    sendCSV(res, `Risk-Register-${new Date().toISOString().split('T')[0]}.csv`,
+      ['Risk ID', 'Description', 'Probability (1-5)', 'Cost Impact (GBP)', 'Time Impact (days)', 'Mitigation', 'Owner', 'Linked EW', 'Status'],
+      risks.map((r) => [r.riskId, r.description, r.probability, r.costImpact ?? '', r.timeImpact ?? '', r.mitigation ?? '', r.owner ?? '', r.earlyWarning?.ewNumber ?? '', r.status]),
+    )
+  } catch {
+    res.status(500).json({ message: 'Export failed' })
+  }
+})
+
+router.get('/:projectId/exports/ces-csv', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const ces = await prisma.compensationEvent.findMany({
+      where: { projectId: req.params.projectId },
+      orderBy: { ceNumber: 'asc' },
+    })
+    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CESummary', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
+    sendCSV(res, `CE-Summary-${new Date().toISOString().split('T')[0]}.csv`,
+      ['CE No.', 'Title', 'Clause Ref', 'Date Notified', 'Response Due', 'Quotation Due', 'Valuation (GBP)', 'Status', 'Description'],
+      ces.map((ce) => [
+        ce.ceNumber, ce.title, ce.clauseRef ?? '',
+        ce.dateNotified ? new Date(ce.dateNotified).toLocaleDateString('en-GB') : '',
+        ce.dateResponseDue ? new Date(ce.dateResponseDue).toLocaleDateString('en-GB') : '',
+        ce.dateQuotationDue ? new Date(ce.dateQuotationDue).toLocaleDateString('en-GB') : '',
+        ce.valuationAmount ?? '', ce.status, ce.description,
+      ]),
+    )
+  } catch {
+    res.status(500).json({ message: 'Export failed' })
+  }
+})
+
 // ─── IMPORT RISKS FROM EXCEL ─────────────────────────────────────────────────
 
 router.post('/:projectId/imports/risks',

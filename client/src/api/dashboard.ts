@@ -30,6 +30,16 @@ export const downloadExcel = async (projectId: string, type: 'risks' | 'ces') =>
   URL.revokeObjectURL(url)
 }
 
+export const downloadCSV = async (projectId: string, type: 'risks' | 'ces') => {
+  const res = await api.get(`/projects/${projectId}/exports/${type}-csv`, { responseType: 'blob' })
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${type}-${new Date().toISOString().split('T')[0]}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export const importRisksFromExcel = async (projectId: string, file: File) => {
   const form = new FormData()
   form.append('file', file)

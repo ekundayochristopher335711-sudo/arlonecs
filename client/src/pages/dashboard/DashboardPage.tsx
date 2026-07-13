@@ -1,13 +1,14 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  AlertTriangle, ShieldAlert, FileText, Clock, TrendingUp, Download, FileSpreadsheet,
+  AlertTriangle, ShieldAlert, FileText, Clock, TrendingUp, Download, FileSpreadsheet, FileType, ChevronDown,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, Legend,
 } from 'recharts'
-import { getDashboard, downloadReport, downloadExcel } from '../../api/dashboard'
+import { getDashboard, downloadReport, downloadExcel, downloadCSV } from '../../api/dashboard'
 import { getCEs } from '../../api/compensationEvents'
 import { KPICard } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -25,6 +26,7 @@ const CE_COLORS: Record<string, string> = {
 export default function DashboardPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const toast = useToast()
+  const [exportOpen, setExportOpen] = useState(false)
 
   const exportFile = async (fn: () => Promise<void>, label: string) => {
     try {
@@ -91,16 +93,36 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-navy-900">Commercial Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">Real-time project performance overview</p>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
-          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={() => exportFile(() => downloadReport(projectId!, 'commercial'), 'Commercial report')}>
-            PDF Report
+        <div className="relative">
+          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={() => setExportOpen((v) => !v)}>
+            Export <ChevronDown className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => exportFile(() => downloadExcel(projectId!, 'ces'), 'CE summary')}>
-            CE Excel
-          </Button>
-          <Button variant="outline" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={() => exportFile(() => downloadExcel(projectId!, 'risks'), 'Risk register')}>
-            Risk Excel
-          </Button>
+          {exportOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-card-lg z-20 py-1.5">
+                {[
+                  { icon: FileType, label: 'Commercial Report — PDF', hint: 'Opens on any device', fn: () => downloadReport(projectId!, 'commercial'), name: 'Commercial report' },
+                  { icon: FileType, label: 'CE Summary — CSV', hint: 'Opens anywhere, even phones', fn: () => downloadCSV(projectId!, 'ces'), name: 'CE summary (CSV)' },
+                  { icon: FileType, label: 'Risk Register — CSV', hint: 'Opens anywhere, even phones', fn: () => downloadCSV(projectId!, 'risks'), name: 'Risk register (CSV)' },
+                  { icon: FileSpreadsheet, label: 'CE Summary — Excel', hint: 'Styled, for Excel users', fn: () => downloadExcel(projectId!, 'ces'), name: 'CE summary (Excel)' },
+                  { icon: FileSpreadsheet, label: 'Risk Register — Excel', hint: 'Styled, for Excel users', fn: () => downloadExcel(projectId!, 'risks'), name: 'Risk register (Excel)' },
+                ].map(({ icon: Icon, label, hint, fn, name }) => (
+                  <button
+                    key={label}
+                    onClick={() => { setExportOpen(false); exportFile(fn, name) }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-start gap-2.5"
+                  >
+                    <Icon className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                    <span>
+                      <span className="block text-sm text-slate-700 font-medium">{label}</span>
+                      <span className="block text-xs text-slate-400">{hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
