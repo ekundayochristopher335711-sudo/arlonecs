@@ -212,6 +212,9 @@ model Document {
   size       Int
   mimeType   String
   uploadedBy String
+  // File content stored in the database so uploads survive serverless deploys.
+  // Legacy rows (pre-migration) have null here and fall back to disk.
+  data       Bytes?
   createdAt  DateTime @default(now())
 
   ce CompensationEvent @relation(fields: [ceId], references: [id], onDelete: Cascade)

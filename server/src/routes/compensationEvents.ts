@@ -3,7 +3,6 @@ import { body, validationResult } from 'express-validator'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
-import os from 'os'
 import prisma from '../config/database'
 import { authenticate, AuthRequest } from '../middleware/auth'
 import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
@@ -11,20 +10,14 @@ import { logAudit, diffObjects } from '../services/auditService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
 import { sendCEStatusChangeNotification } from '../services/emailService'
 
-// On Vercel the only writable location is the ephemeral /tmp. Uploaded files
-// there do NOT persist between requests — for durable storage move this to
-// Supabase Storage / S3. On always-on hosts a local ./uploads dir is used.
-const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'arlonecs-uploads') : path.join(__dirname, '../../uploads')
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+// Files are stored IN the database (bytea) so they survive serverless deploys
+// and are backed up with everything else. Legacy rows created before this
+// change may still point at ./uploads on disk — downloads fall back to it.
+const UPLOAD_DIR = path.join(__dirname, '../../uploads')
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const storage = multer.diskStorage({
-  destination: UPLOAD_DIR,
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-    cb(null, `${unique}${path.extname(file.originalname)}`)
-  },
-})
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } })
+// List/detail responses must never drag file bytes along — always select
+const docSelect = { id: true, ceId: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true }
 
 const router = express.Router()
 
@@ -50,7 +43,7 @@ router.get('/:projectId/compensation-events', authenticate, requireProjectAccess
       },
       include: {
         notices: { select: { id: true, noticeNumber: true, type: true, dateIssued: true } },
-        documents: true,
+        documents: { select: docSelect },
         _count: { select: { notices: true, documents: true } },
       },
       orderBy: { dateNotified: 'desc' },
@@ -67,7 +60,7 @@ router.get('/:projectId/compensation-events/:id', authenticate, requireProjectAc
       where: { id: req.params.id, projectId: req.params.projectId },
       include: {
         notices: true,
-        documents: true,
+        documents: { select: docSelect },
       },
     })
     if (!ce) { res.status(404).json({ message: 'CE not found' }); return }
@@ -112,7 +105,7 @@ router.post('/:projectId/compensation-events',
             valuationAmount: valuationAmount !== undefined && valuationAmount !== null && valuationAmount !== '' ? Number(valuationAmount) : null,
             notifiedBy: req.user!.id,
           },
-          include: { notices: true, documents: true, _count: { select: { notices: true, documents: true } } },
+          include: { notices: true, documents: { select: docSelect }, _count: { select: { notices: true, documents: true } } },
         })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CompensationEvent', entityId: ce.id, action: 'CREATE', ipAddress: req.ip })
@@ -164,7 +157,7 @@ router.put('/:projectId/compensation-events/:id',
       const ce = await prisma.compensationEvent.update({
         where: { id: req.params.id },
         data: updateData,
-        include: { notices: true, documents: true, _count: { select: { notices: true, documents: true } } },
+        include: { notices: true, documents: { select: docSelect }, _count: { select: { notices: true, documents: true } } },
       })
 
       const changes = diffObjects(existing as unknown as Record<string, unknown>, updateData)
@@ -207,11 +200,13 @@ router.post('/:projectId/compensation-events/:id/documents',
         data: {
           ceId: req.params.id,
           name: req.file.originalname,
-          path: req.file.filename,
+          path: '',
           size: req.file.size,
           mimeType: req.file.mimetype,
           uploadedBy: req.user!.id,
+          data: req.file.buffer,
         },
+        select: docSelect,
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Document', entityId: doc.id, action: 'CREATE', ipAddress: req.ip })
       res.status(201).json(doc)
@@ -229,12 +224,17 @@ router.get('/:projectId/documents/:docId/download', authenticate, requireProject
     })
     if (!doc) { res.status(404).json({ message: 'Document not found' }); return }
 
-    const filePath = path.join(UPLOAD_DIR, path.basename(doc.path))
-    if (!fs.existsSync(filePath)) { res.status(404).json({ message: 'File missing from storage' }); return }
-
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Document', entityId: doc.id, action: 'EXPORT', ipAddress: req.ip })
     res.setHeader('Content-Type', doc.mimeType)
     res.setHeader('Content-Disposition', `attachment; filename="${doc.name.replace(/"/g, '')}"`)
+
+    if (doc.data && doc.data.length > 0) {
+      res.send(Buffer.from(doc.data))
+      return
+    }
+    // Legacy row from before database-backed storage — try the old disk path
+    const filePath = doc.path ? path.join(UPLOAD_DIR, path.basename(doc.path)) : ''
+    if (!filePath || !fs.existsSync(filePath)) { res.status(404).json({ message: 'File missing from storage' }); return }
     fs.createReadStream(filePath).pipe(res)
   } catch {
     res.status(500).json({ message: 'Server error' })
@@ -246,7 +246,7 @@ router.get('/:projectId/documents', authenticate, requireProjectAccess, async (r
   try {
     const docs = await prisma.document.findMany({
       where: { ce: { projectId: req.params.projectId } },
-      include: { ce: { select: { id: true, ceNumber: true, title: true } } },
+      select: { ...docSelect, ce: { select: { id: true, ceNumber: true, title: true } } },
       orderBy: { createdAt: 'desc' },
     })
     // Resolve uploader names in one query
@@ -264,13 +264,14 @@ router.delete('/:projectId/compensation-events/:id', authenticate, requireProjec
   try {
     const existing = await prisma.compensationEvent.findFirst({
       where: { id: req.params.id, projectId: req.params.projectId },
-      include: { documents: true },
+      include: { documents: { select: { path: true } } },
     })
     if (!existing) { res.status(404).json({ message: 'CE not found' }); return }
 
     await prisma.compensationEvent.delete({ where: { id: req.params.id } })
-    // Remove orphaned files from storage
+    // Remove orphaned legacy disk files (DB-stored files cascade automatically)
     for (const doc of existing.documents) {
+      if (!doc.path) continue
       const filePath = path.join(UPLOAD_DIR, path.basename(doc.path))
       fs.promises.unlink(filePath).catch(() => {})
     }
