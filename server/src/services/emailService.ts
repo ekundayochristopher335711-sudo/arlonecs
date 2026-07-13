@@ -37,7 +37,11 @@ export async function sendOverdueNotifications() {
   const dueCEs = await prisma.compensationEvent.findMany({
     where: {
       status: { not: 'CLOSED' },
-      dateResponseDue: { lt: soon },
+      OR: [
+        { dateResponseDue: { lt: soon } },
+        // cl. 62.3 quotation clock — runs while the CE awaits a quotation
+        { status: 'NOTIFIED', dateQuotationDue: { lt: soon } },
+      ],
     },
     include: {
       project: { select: { name: true } },
@@ -53,23 +57,24 @@ export async function sendOverdueNotifications() {
 
   for (const project of projects) {
     const projectCEs = dueCEs.filter((ce) => ce.projectId === project.id)
-    const overdue = projectCEs.filter((ce) => ce.dateResponseDue && ce.dateResponseDue < now)
-    const dueSoon = projectCEs.filter((ce) => ce.dateResponseDue && ce.dateResponseDue >= now)
+    const overdue = projectCEs.filter((ce) => ce.dateResponseDue && ce.dateResponseDue < now && ce.dateResponseDue < soon)
+    const dueSoon = projectCEs.filter((ce) => ce.dateResponseDue && ce.dateResponseDue >= now && ce.dateResponseDue < soon)
+    const quotationDue = projectCEs.filter((ce) => ce.status === 'NOTIFIED' && ce.dateQuotationDue && ce.dateQuotationDue < soon)
     const recipients = project.members
       .filter((m) => m.role !== 'VIEWER')
       .map((m) => m.user.email)
 
     if (recipients.length === 0) continue
 
-    const rows = (list: typeof projectCEs, color: string) => list.map((ce) => `
+    const rows = (list: typeof projectCEs, color: string, dateOf: (ce: typeof projectCEs[number]) => Date | null) => list.map((ce) => `
       <tr>
         <td style="padding:8px;border:1px solid #E2E8F0;font-size:12px;font-weight:bold">${ce.ceNumber}</td>
         <td style="padding:8px;border:1px solid #E2E8F0;font-size:12px">${ce.title}</td>
-        <td style="padding:8px;border:1px solid #E2E8F0;font-size:12px;color:${color}">${ce.dateResponseDue?.toLocaleDateString('en-GB')}</td>
+        <td style="padding:8px;border:1px solid #E2E8F0;font-size:12px;color:${color}">${dateOf(ce)?.toLocaleDateString('en-GB')}</td>
         <td style="padding:8px;border:1px solid #E2E8F0;font-size:12px">${ce.status}</td>
       </tr>`).join('')
 
-    const table = (title: string, list: typeof projectCEs, color: string) => list.length === 0 ? '' : `
+    const table = (title: string, list: typeof projectCEs, color: string, dateOf: (ce: typeof projectCEs[number]) => Date | null = (ce) => ce.dateResponseDue) => list.length === 0 ? '' : `
       <h3 style="color:#0F172A;margin-top:16px">${title}</h3>
       <table style="width:100%;border-collapse:collapse">
         <tr style="background:#F8FAFC">
@@ -78,16 +83,17 @@ export async function sendOverdueNotifications() {
           <th style="padding:8px;text-align:left;border:1px solid #E2E8F0;font-size:12px">Due Date</th>
           <th style="padding:8px;text-align:left;border:1px solid #E2E8F0;font-size:12px">Status</th>
         </tr>
-        ${rows(list, color)}
+        ${rows(list, color, dateOf)}
       </table>`
 
     await transporter.sendMail({
       from: FROM(),
       to: recipients.join(', '),
-      subject: `[ACTION REQUIRED] ${overdue.length} overdue / ${dueSoon.length} due soon — ${project.name}`,
+      subject: `[ACTION REQUIRED] ${overdue.length} overdue / ${dueSoon.length + quotationDue.length} due soon — ${project.name}`,
       html: shell(`
         ${table(`⚠️ Overdue Compensation Events — ${project.name}`, overdue, '#DC2626')}
-        ${table('⏳ Due within 3 days', dueSoon, '#D97706')}
+        ${table('⏳ Response due within 3 days', dueSoon, '#D97706')}
+        ${table('📋 Quotation due (NEC cl. 62.3)', quotationDue, '#0D9488', (ce) => ce.dateQuotationDue)}
         <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#0D9488;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Arlonecs Project Controls</a></p>
       `),
     })

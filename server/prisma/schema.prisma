@@ -165,10 +165,12 @@ model CompensationEvent {
   projectId       String
   title           String
   description     String
-  clauseRef       String?
-  dateNotified    DateTime
-  dateResponseDue DateTime?
-  valuationAmount Float?
+  clauseRef        String?
+  dateAwareness    DateTime?
+  dateNotified     DateTime
+  dateResponseDue  DateTime?
+  dateQuotationDue DateTime?
+  valuationAmount  Float?
   status          CEStatus @default(NOTIFIED)
   notifiedBy      String?
   createdAt       DateTime @default(now())

@@ -6,6 +6,7 @@ export interface CEPayload {
   title?: string
   description?: string
   clauseRef?: string
+  dateAwareness?: string | null
   dateNotified?: string
   dateResponseDue?: string | null
   valuationAmount?: number | null

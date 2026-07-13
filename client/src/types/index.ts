@@ -92,8 +92,10 @@ export interface CompensationEvent {
   title: string
   description: string
   clauseRef?: string
+  dateAwareness?: string
   dateNotified: string
   dateResponseDue?: string
+  dateQuotationDue?: string
   valuationAmount?: number
   status: CEStatus
   notifiedBy?: string

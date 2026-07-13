@@ -23,11 +23,48 @@ const schema = z.object({
   title: z.string().min(1, 'Title required'),
   description: z.string().min(1, 'Description required'),
   dateNotified: z.string().min(1, 'Date required'),
+  dateAwareness: z.string().optional(),
   clauseRef: z.string().optional(),
   dateResponseDue: z.string().optional(),
   valuationAmount: z.string().optional(),
   status: z.enum(['NOTIFIED', 'QUOTED', 'ASSESSED', 'IMPLEMENTED', 'CLOSED']).optional(),
 })
+
+// NEC cl. 61.3 — a CE must be notified within 8 weeks of awareness
+const TIME_BAR_DAYS = 56
+
+function TimeBarHint({ awareness, notified }: { awareness?: string; notified?: string }) {
+  if (!awareness) return null
+  const deadline = new Date(new Date(awareness).getTime() + TIME_BAR_DAYS * 24 * 60 * 60 * 1000)
+  const ref = notified ? new Date(notified) : new Date()
+  const daysLeft = differenceInDays(deadline, ref)
+  if (daysLeft < 0) return (
+    <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+      ⚠️ Time-barred: notification is {-daysLeft} day{daysLeft !== -1 ? 's' : ''} past the 8-week limit under NEC cl. 61.3 — entitlement may be lost.
+    </p>
+  )
+  return (
+    <p className={`text-xs font-medium rounded-lg px-3 py-2 border ${daysLeft <= 14 ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-emerald-700 bg-emerald-50 border-emerald-100'}`}>
+      ⏱ {daysLeft} day{daysLeft !== 1 ? 's' : ''} left on the 8-week notification clock (NEC cl. 61.3) — expires {format(deadline, 'dd MMM yyyy')}.
+    </p>
+  )
+}
+
+function DeadlineClock({ ce }: { ce: CompensationEvent }) {
+  if (ce.status === 'CLOSED') return <span className="text-xs text-slate-300">—</span>
+  const due = ce.status === 'NOTIFIED' && ce.dateQuotationDue && (!ce.dateResponseDue || new Date(ce.dateQuotationDue) < new Date(ce.dateResponseDue))
+    ? { date: ce.dateQuotationDue, label: 'quote' }
+    : ce.dateResponseDue ? { date: ce.dateResponseDue, label: 'reply' } : null
+  if (!due) return <span className="text-xs text-slate-300">—</span>
+  const days = differenceInDays(parseISO(due.date), new Date())
+  if (days < 0) return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />{-days}d overdue
+    </span>
+  )
+  const style = days <= 3 ? 'text-red-600 bg-red-50' : days <= 7 ? 'text-amber-700 bg-amber-50' : 'text-slate-600 bg-slate-100'
+  return <span className={`text-xs font-semibold px-2 py-1 rounded-full ${style}`}>{days}d to {due.label}</span>
+}
 type FormData = z.infer<typeof schema>
 
 const statusOptions = [
@@ -71,7 +108,7 @@ export default function CompensationEventsPage() {
     enabled: !!projectId,
   })
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { dateNotified: new Date().toISOString().split('T')[0] },
   })
@@ -81,6 +118,7 @@ export default function CompensationEventsPage() {
     setValue('title', ce.title)
     setValue('description', ce.description)
     setValue('dateNotified', ce.dateNotified.split('T')[0])
+    setValue('dateAwareness', ce.dateAwareness ? ce.dateAwareness.split('T')[0] : '')
     setValue('clauseRef', ce.clauseRef || '')
     setValue('dateResponseDue', ce.dateResponseDue ? ce.dateResponseDue.split('T')[0] : '')
     setValue('valuationAmount', ce.valuationAmount != null ? String(ce.valuationAmount) : '')
@@ -96,6 +134,7 @@ export default function CompensationEventsPage() {
         title: data.title,
         description: data.description,
         dateNotified: data.dateNotified,
+        dateAwareness: data.dateAwareness || (editing ? null : undefined),
         clauseRef: data.clauseRef || undefined,
         // On edit, empty values clear the field (null); on create they are simply omitted
         dateResponseDue: data.dateResponseDue || (editing ? null : undefined),
@@ -172,6 +211,7 @@ export default function CompensationEventsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Clause</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Notified</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Due</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Clock</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">Valuation</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Workflow</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">Status</th>
@@ -202,6 +242,7 @@ export default function CompensationEventsPage() {
                         </span>
                       ) : '—'}
                     </td>
+                    <td className="px-4 py-3"><DeadlineClock ce={ce} /></td>
                     <td className="px-4 py-3 text-xs font-medium text-slate-700">
                       {ce.valuationAmount != null ? `£${ce.valuationAmount.toLocaleString('en-GB')}` : 'TBD'}
                     </td>
@@ -230,6 +271,12 @@ export default function CompensationEventsPage() {
             <Input label="NEC Clause Reference" placeholder="60.1(1)" {...register('clauseRef')} />
             <Input label="Date Notified *" type="date" error={errors.dateNotified?.message} {...register('dateNotified')} />
             <Input label="Response Due Date" type="date" {...register('dateResponseDue')} />
+          </div>
+          <div className="grid grid-cols-3 gap-3 items-end">
+            <Input label="Date Became Aware (cl. 61.3)" type="date" {...register('dateAwareness')} />
+            <div className="col-span-2">
+              <TimeBarHint awareness={watch('dateAwareness')} notified={watch('dateNotified')} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Valuation Amount (£)" type="number" placeholder="25000" {...register('valuationAmount')} />
