@@ -1,7 +1,7 @@
 import { NavLink, useParams } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, AlertTriangle, ShieldAlert,
-  FileText, Bell, ClipboardList, GitBranch, Files, Users,
+  FileText, Bell, ClipboardList, GitBranch, Files, Users, Home,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
@@ -41,6 +41,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function ProjectNav({ projectId }: { projectId: string }) {
   const base = `/projects/${projectId}`
   const items = [
+    { to: base, icon: Home, label: 'Overview & Team', end: true },
     { to: `${base}/dashboard`, icon: LayoutDashboard, label: 'Dashboard' },
     { to: `${base}/early-warnings`, icon: AlertTriangle, label: 'Early Warnings' },
     { to: `${base}/risks`, icon: ShieldAlert, label: 'Risk Register' },
