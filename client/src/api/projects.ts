@@ -13,3 +13,6 @@ export const updateProject = (id: string, data: Partial<Project>) =>
 
 export const addProjectMember = (projectId: string, userId: string, role: string) =>
   api.post(`/projects/${projectId}/members`, { userId, role }).then((r) => r.data)
+
+export const removeProjectMember = (projectId: string, userId: string) =>
+  api.delete(`/projects/${projectId}/members/${userId}`)

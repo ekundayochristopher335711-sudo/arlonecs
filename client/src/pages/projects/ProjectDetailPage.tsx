@@ -5,10 +5,11 @@ import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashbo
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { getProject } from '../../api/projects'
+import { getProject, addProjectMember, removeProjectMember } from '../../api/projects'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { useToast } from '../../components/ui/Toast'
+import { useAuthStore } from '../../store/authStore'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import { format, parseISO } from 'date-fns'
@@ -29,7 +30,8 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canEdit } = useProjectRole()
+  const { canEdit, role: myProjectRole } = useProjectRole()
+  const me = useAuthStore((s) => s.user)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteLink, setInviteLink] = useState('')
@@ -83,6 +85,26 @@ export default function ProjectDetailPage() {
     mutationFn: (id: string) => revokeInvitation(projectId!, id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', projectId] }),
   })
+
+  const roleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: string }) => addProjectMember(projectId!, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      toast.success('Project role updated')
+    },
+    onError: () => toast.error('Could not change role — project admins only.'),
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (userId: string) => removeProjectMember(projectId!, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      toast.success('Member removed from project')
+    },
+    onError: () => toast.error('Could not remove member.'),
+  })
+
+  const canManageTeam = myProjectRole === 'ADMIN'
 
   // Invitation rights follow the user's role ON THIS PROJECT, not their global role
   const canInvite = canEdit
@@ -161,9 +183,30 @@ export default function ProjectDetailPage() {
                 <p className="text-sm font-medium text-slate-800">{m.user.name}</p>
                 <p className="text-xs text-slate-400 truncate">{m.user.email}</p>
               </div>
-              <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${roleColors[m.role] ?? 'bg-slate-100 text-slate-600'}`}>
-                {m.role.replace('_', ' ')}
-              </span>
+              {canManageTeam && m.user.id !== me?.id ? (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={m.role}
+                    onChange={(e) => roleMutation.mutate({ userId: m.user.id, role: e.target.value })}
+                    className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-green/40 bg-white"
+                  >
+                    <option value="VIEWER">Viewer</option>
+                    <option value="COMMERCIAL_MANAGER">Commercial Manager</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                  <button
+                    onClick={() => removeMutation.mutate(m.user.id)}
+                    title="Remove from project"
+                    className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${roleColors[m.role] ?? 'bg-slate-100 text-slate-600'}`}>
+                  {m.role.replace('_', ' ')}
+                </span>
+              )}
             </div>
           ))}
         </div>

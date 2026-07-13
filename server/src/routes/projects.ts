@@ -129,4 +129,24 @@ router.post('/:projectId/members',
   },
 )
 
+// Remove a member from the project (project ADMIN only, never yourself)
+router.delete('/:projectId/members/:userId',
+  authenticate,
+  requireProjectAccess,
+  requireProjectRole('ADMIN'),
+  async (req: AuthRequest, res): Promise<void> => {
+    if (req.params.userId === req.user!.id) { res.status(400).json({ message: 'You cannot remove yourself from the project' }); return }
+    try {
+      const { count } = await prisma.projectMember.deleteMany({
+        where: { projectId: req.params.projectId, userId: req.params.userId },
+      })
+      if (count === 0) { res.status(404).json({ message: 'Member not found' }); return }
+      await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'ProjectMember', entityId: req.params.userId, action: 'DELETE', ipAddress: req.ip })
+      res.status(204).send()
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
 export default router
