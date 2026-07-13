@@ -145,7 +145,7 @@ export async function sendInvitationEmail(
         <strong>${projectName}</strong> as a <strong>${role.replace('_', ' ')}</strong>.
       </p>
       <a href="${inviteUrl}"
-         style="display:inline-block;background:linear-gradient(135deg,#34D399,#22D3EE);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
+         style="display:inline-block;background:#0D9488;color:#FFFFFF;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
         Accept Invitation
       </a>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
@@ -172,7 +172,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
         Hi ${name}, we received a request to reset your password. This link expires in 1 hour.
       </p>
       <a href="${resetUrl}"
-         style="display:inline-block;background:linear-gradient(135deg,#34D399,#22D3EE);color:#080F1C;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
+         style="display:inline-block;background:#0D9488;color:#FFFFFF;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
         Reset Password
       </a>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
