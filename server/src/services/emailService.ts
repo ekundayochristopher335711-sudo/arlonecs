@@ -144,10 +144,7 @@ export async function sendInvitationEmail(
         <strong>${inviterName}</strong> has invited you to join
         <strong>${projectName}</strong> as a <strong>${role.replace('_', ' ')}</strong>.
       </p>
-      <a href="${inviteUrl}"
-         style="display:inline-block;background:#0D9488;color:#FFFFFF;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
-        Accept Invitation
-      </a>
+      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#0D9488" style="border-radius:8px"><a href="${inviteUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Accept Invitation</a></td></tr></table>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
         This invitation expires in 7 days. If you weren't expecting this, you can ignore this email.
       </p>
@@ -171,10 +168,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
       <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
         Hi ${name}, we received a request to reset your password. This link expires in 1 hour.
       </p>
-      <a href="${resetUrl}"
-         style="display:inline-block;background:#0D9488;color:#FFFFFF;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">
-        Reset Password
-      </a>
+      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#0D9488" style="border-radius:8px"><a href="${resetUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Reset Password</a></td></tr></table>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
         If you didn't request this, you can safely ignore this email — your password will not change.
       </p>
