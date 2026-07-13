@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail, Copy } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { getProject } from '../../api/projects'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
 import { useProjectRole } from '../../hooks/useProjectRole'
+import { useToast } from '../../components/ui/Toast'
 import Modal from '../../components/ui/Modal'
 import Button from '../../components/ui/Button'
 import { format, parseISO } from 'date-fns'
@@ -31,6 +32,15 @@ export default function ProjectDetailPage() {
   const { canEdit } = useProjectRole()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
+  const [inviteLink, setInviteLink] = useState('')
+  const toast = useToast()
+
+  const copyLink = (token: string) => {
+    const link = `${window.location.origin}/accept-invitation/${token}`
+    navigator.clipboard.writeText(link)
+      .then(() => toast.success('Invite link copied — paste it in WhatsApp, email, anywhere'))
+      .catch(() => toast.error('Could not copy. Long-press the link to copy manually.'))
+  }
 
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', projectId],
@@ -51,9 +61,10 @@ export default function ProjectDetailPage() {
 
   const inviteMutation = useMutation({
     mutationFn: (data: InviteForm) => sendInvitation(projectId!, data.email, data.role),
-    onSuccess: (_, vars) => {
+    onSuccess: (res: { token?: string }, vars) => {
       queryClient.invalidateQueries({ queryKey: ['invitations', projectId] })
-      setInviteSuccess(`Invitation sent to ${vars.email}`)
+      setInviteSuccess(`Invitation created for ${vars.email}`)
+      setInviteLink(res.token ? `${window.location.origin}/accept-invitation/${res.token}` : '')
       reset()
     },
   })
@@ -99,7 +110,7 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         {canInvite && (
-          <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess('') }}>
+          <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink('') }}>
             Invite Member
           </Button>
         )}
@@ -153,7 +164,7 @@ export default function ProjectDetailPage() {
             <div className="px-5 py-3 border-t border-slate-100 border-dashed">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Invitations</p>
             </div>
-            {(pendingInvites as { id: string; email: string; role: string; expiresAt: string }[]).map((inv) => (
+            {(pendingInvites as { id: string; email: string; role: string; expiresAt: string; token: string }[]).map((inv) => (
               <div key={inv.id} className="px-5 py-3 flex items-center gap-3 border-t border-dashed border-slate-100 bg-slate-50/50">
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4 text-slate-400" />
@@ -165,7 +176,10 @@ export default function ProjectDetailPage() {
                 <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${roleColors[inv.role] ?? 'bg-slate-100 text-slate-600'}`}>
                   {inv.role.replace('_', ' ')}
                 </span>
-                <button onClick={() => revokeMutation.mutate(inv.id)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                <button onClick={() => copyLink(inv.token)} title="Copy invite link" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => revokeMutation.mutate(inv.id)} title="Revoke invitation" className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -197,7 +211,22 @@ export default function ProjectDetailPage() {
             </select>
           </div>
 
-          {inviteSuccess && <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">{inviteSuccess}</p>}
+          {inviteSuccess && (
+            <div className="bg-green-50 border border-green-100 rounded-lg px-3 py-3 space-y-2">
+              <p className="text-sm text-green-700 font-medium">{inviteSuccess}</p>
+              {inviteLink && (
+                <>
+                  <p className="text-xs text-slate-500">Share this link with them directly — it works even without email set up:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-2 truncate">{inviteLink}</code>
+                    <Button type="button" size="sm" variant="outline" icon={<Copy className="w-3.5 h-3.5" />} onClick={() => copyLink(inviteLink.split('/accept-invitation/')[1])}>
+                      Copy
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           {inviteMutation.isError && <p className="text-sm text-red-600">Failed to send invitation. Please try again.</p>}
 
           <div className="flex justify-end gap-2 pt-1">
