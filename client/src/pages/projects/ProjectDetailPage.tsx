@@ -33,6 +33,7 @@ export default function ProjectDetailPage() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteLink, setInviteLink] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
   const toast = useToast()
 
   const copyLink = (token: string) => {
@@ -40,6 +41,14 @@ export default function ProjectDetailPage() {
     navigator.clipboard.writeText(link)
       .then(() => toast.success('Invite link copied — paste it in WhatsApp, email, anywhere'))
       .catch(() => toast.error('Could not copy. Long-press the link to copy manually.'))
+  }
+
+  // Opens the user's own email app with a ready-written invitation
+  const emailLink = (email: string, token: string) => {
+    const link = `${window.location.origin}/accept-invitation/${token}`
+    const subject = `You're invited to join ${project?.name ?? 'a project'} on Arlonecs`
+    const body = `Hi,\n\nYou've been invited to collaborate on "${project?.name ?? 'a project'}" in Arlonecs Project Controls.\n\nClick this link to set up your account (it expires in 7 days):\n${link}\n\nThanks`
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   const { data: project, isLoading } = useQuery({
@@ -65,6 +74,7 @@ export default function ProjectDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['invitations', projectId] })
       setInviteSuccess(`Invitation created for ${vars.email}`)
       setInviteLink(res.token ? `${window.location.origin}/accept-invitation/${res.token}` : '')
+      setInviteEmail(vars.email)
       reset()
     },
   })
@@ -179,6 +189,9 @@ export default function ProjectDetailPage() {
                 <button onClick={() => copyLink(inv.token)} title="Copy invite link" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
                   <Copy className="w-3.5 h-3.5" />
                 </button>
+                <button onClick={() => emailLink(inv.email, inv.token)} title="Send by email" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                  <Mail className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => revokeMutation.mutate(inv.id)} title="Revoke invitation" className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -221,6 +234,9 @@ export default function ProjectDetailPage() {
                     <code className="flex-1 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-2 truncate">{inviteLink}</code>
                     <Button type="button" size="sm" variant="outline" icon={<Copy className="w-3.5 h-3.5" />} onClick={() => copyLink(inviteLink.split('/accept-invitation/')[1])}>
                       Copy
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" icon={<Mail className="w-3.5 h-3.5" />} onClick={() => emailLink(inviteEmail, inviteLink.split('/accept-invitation/')[1])}>
+                      Email it
                     </Button>
                   </div>
                 </>

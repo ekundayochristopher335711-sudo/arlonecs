@@ -37,18 +37,18 @@ router.post('/register',
       // Role is NEVER taken from the request body. Self-registered users are
       // COMMERCIAL_MANAGER so they can create and administer their own projects;
       // access to any other project still requires membership.
+      // Accounts start INACTIVE — a platform admin must approve them before
+      // first sign-in. (Invited users bypass this; the invite is the approval.)
       const user = await prisma.user.create({
-        data: { email, password: hashed, name, role: 'COMMERCIAL_MANAGER' },
+        data: { email, password: hashed, name, role: 'COMMERCIAL_MANAGER', isActive: false },
         select: { id: true, email: true, name: true, role: true, createdAt: true },
       })
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET!,
-        { expiresIn: '24h' },
-      )
-      await logAudit({ userId: user.id, entityType: 'User', entityId: user.id, action: 'CREATE', ipAddress: req.ip })
-      res.status(201).json({ user, token })
+      await logAudit({ userId: user.id, entityType: 'User', entityId: user.id, action: 'CREATE', changes: { status: { old: null, new: 'PENDING_APPROVAL' } }, ipAddress: req.ip })
+      res.status(201).json({
+        pendingApproval: true,
+        message: 'Account created. An administrator must approve it before you can sign in.',
+      })
     } catch {
       res.status(500).json({ message: 'Server error' })
     }
@@ -66,10 +66,16 @@ router.post('/login',
     const { email, password } = req.body
     try {
       const user = await prisma.user.findUnique({ where: { email } })
-      if (!user || !user.isActive) { res.status(401).json({ message: 'Invalid credentials' }); return }
+      if (!user) { res.status(401).json({ message: 'Invalid credentials' }); return }
 
       const valid = await bcrypt.compare(password, user.password)
       if (!valid) { res.status(401).json({ message: 'Invalid credentials' }); return }
+
+      // Correct password but not yet approved/reactivated — tell them why
+      if (!user.isActive) {
+        res.status(403).json({ message: 'Your account is awaiting approval by an administrator. You will be able to sign in once it has been approved.' })
+        return
+      }
 
       const token = jwt.sign(
         { id: user.id, email: user.email, role: user.role },

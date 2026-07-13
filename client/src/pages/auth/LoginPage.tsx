@@ -30,8 +30,10 @@ export default function LoginPage() {
       const res = await login(data.email, data.password)
       setAuth(res.user, res.token)
       navigate('/projects')
-    } catch {
-      setServerError('Invalid email or password. Please try again.')
+    } catch (e: unknown) {
+      const resp = (e as { response?: { status?: number; data?: { message?: string } } })?.response
+      // 403 = right password but account pending approval / deactivated — explain why
+      setServerError(resp?.status === 403 && resp.data?.message ? resp.data.message : 'Invalid email or password. Please try again.')
     }
   }
 

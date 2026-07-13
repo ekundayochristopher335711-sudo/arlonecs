@@ -3,9 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { register as registerUser } from '../../api/auth'
-import { useAuthStore } from '../../store/authStore'
 import LogoSpinner from '../../components/ui/LogoSpinner'
 
 const schema = z.object({
@@ -21,9 +20,9 @@ type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const setAuth = useAuthStore((s) => s.setAuth)
   const [serverError, setServerError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [pending, setPending] = useState(false)
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -32,14 +31,33 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     try {
       setServerError('')
-      const res = await registerUser({ name: data.name, email: data.email, password: data.password })
-      setAuth(res.user, res.token)
-      navigate('/projects')
+      await registerUser({ name: data.name, email: data.email, password: data.password })
+      setPending(true)
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number } })?.response?.status
       setServerError(status === 409 ? 'That email is already registered. Try signing in instead.' : 'Could not create your account. Please try again.')
     }
   }
+
+  if (pending) return (
+    <div className="min-h-screen bg-navy-900 flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <div className="w-14 h-14 rounded-full gradient-brand flex items-center justify-center mx-auto mb-4">
+          <ShieldCheck className="w-7 h-7 text-navy-900" />
+        </div>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Account created — pending approval</h2>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          For security, an administrator reviews every new account. You'll be able to sign in as soon as yours is approved.
+        </p>
+        <button
+          onClick={() => navigate('/login')}
+          className="w-full py-2.5 rounded-lg gradient-brand text-navy-900 font-semibold text-sm hover:opacity-90 transition-opacity"
+        >
+          Back to Sign In
+        </button>
+      </div>
+    </div>
+  )
 
   const inputClass = (hasError: boolean) =>
     `w-full px-3.5 py-2.5 text-sm rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green/40 focus:border-brand-green ${hasError ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white hover:border-slate-300'}`

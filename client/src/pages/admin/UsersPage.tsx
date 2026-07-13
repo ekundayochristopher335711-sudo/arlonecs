@@ -24,9 +24,13 @@ export default function UsersPage() {
 
   const mutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { isActive?: boolean; role?: string } }) => updateUser(id, data),
-    onSuccess: (updated) => {
+    onSuccess: (updated, vars) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      toast.success(updated.isActive === false ? `${updated.email} deactivated` : `${updated.email} updated`)
+      toast.success(
+        vars.data.isActive === true ? `${updated.email} approved — they can now sign in`
+        : vars.data.isActive === false ? `${updated.email} deactivated`
+        : `${updated.email} updated`,
+      )
       setDeactivating(null)
     },
     onError: () => { toast.error('Update failed. Please try again.'); setDeactivating(null) },
@@ -39,7 +43,7 @@ export default function UsersPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-navy-900">User Management</h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          {users.length} account{users.length !== 1 ? 's' : ''} · deactivated users cannot sign in
+          {users.length} account{users.length !== 1 ? 's' : ''} · new signups need your approval before they can sign in
         </p>
       </div>
 
@@ -92,8 +96,8 @@ export default function UsersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.isActive === false ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {u.isActive === false ? 'Deactivated' : 'Active'}
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.isActive === false ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {u.isActive === false ? 'Awaiting approval' : 'Active'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">{format(parseISO(u.createdAt), 'dd MMM yyyy')}</td>
@@ -104,7 +108,7 @@ export default function UsersPage() {
                             onClick={() => mutation.mutate({ id: u.id, data: { isActive: true } })}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 px-2 py-1.5 rounded-lg transition-colors"
                           >
-                            <UserCheck className="w-3.5 h-3.5" /> Reactivate
+                            <UserCheck className="w-3.5 h-3.5" /> Approve
                           </button>
                         ) : (
                           <button

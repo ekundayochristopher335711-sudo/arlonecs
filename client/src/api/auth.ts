@@ -5,7 +5,7 @@ export const login = (email: string, password: string) =>
   api.post<{ user: User; token: string }>('/auth/login', { email, password }).then((r) => r.data)
 
 export const register = (data: { email: string; password: string; name: string }) =>
-  api.post<{ user: User; token: string }>('/auth/register', data).then((r) => r.data)
+  api.post<{ pendingApproval: boolean; message: string }>('/auth/register', data).then((r) => r.data)
 
 export const forgotPassword = (email: string) =>
   api.post<{ message: string }>('/auth/forgot-password', { email }).then((r) => r.data)
