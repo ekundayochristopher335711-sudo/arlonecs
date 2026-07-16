@@ -47,9 +47,9 @@ export default function LoginPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Arlonecs" className="w-10 h-10" />
+            <img src="/logo.svg" alt="Aurum" className="w-10 h-10" />
             <div>
-              <p className="text-white font-semibold text-lg leading-none">Arlonecs</p>
+              <p className="text-white font-semibold text-lg leading-none">Aurum</p>
               <p className="text-brand-green text-xs font-medium mt-0.5">Project Controls</p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-slate-600 text-xs">
-          © {new Date().getFullYear()} Arlonecs Project Controls. All rights reserved.
+          © {new Date().getFullYear()} Aurum Project Controls. All rights reserved.
         </p>
       </div>
 
@@ -89,8 +89,8 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <img src="/logo.svg" alt="Arlonecs" className="w-9 h-9" />
-            <p className="font-semibold text-navy-900 text-lg">Arlonecs Project Controls</p>
+            <img src="/logo.svg" alt="Aurum" className="w-9 h-9" />
+            <p className="font-semibold text-navy-900 text-lg">Aurum Project Controls</p>
           </div>
 
           <h2 className="text-2xl font-semibold text-slate-900 mb-1">Welcome back</h2>
@@ -152,7 +152,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-sm text-slate-500 text-center">
-            New to Arlonecs?{' '}
+            New to Aurum?{' '}
             <Link to="/register" className="font-medium text-navy-900 hover:underline">Create an account</Link>
           </p>
 

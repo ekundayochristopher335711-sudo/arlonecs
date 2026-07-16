@@ -48,8 +48,8 @@ export default function ProjectDetailPage() {
   // Opens the user's own email app with a ready-written invitation
   const emailLink = (email: string, token: string) => {
     const link = `${window.location.origin}/accept-invitation/${token}`
-    const subject = `You're invited to join ${project?.name ?? 'a project'} on Arlonecs`
-    const body = `Hi,\n\nYou've been invited to collaborate on "${project?.name ?? 'a project'}" in Arlonecs Project Controls.\n\nClick this link to set up your account (it expires in 7 days):\n${link}\n\nThanks`
+    const subject = `You're invited to join ${project?.name ?? 'a project'} on Aurum`
+    const body = `Hi,\n\nYou've been invited to collaborate on "${project?.name ?? 'a project'}" in Aurum Project Controls.\n\nClick this link to set up your account (it expires in 7 days):\n${link}\n\nThanks`
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 

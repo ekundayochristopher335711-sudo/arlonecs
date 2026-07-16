@@ -10,7 +10,7 @@ import { nextNumber } from '../services/numberingService'
 const router = express.Router()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const GOLD = 'FF0D9488'
+const GOLD = 'FFB45309'
 const NAVY = 'FF0F172A'
 const LIGHT = 'FFF8FAFC'
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 }
@@ -58,7 +58,7 @@ router.get('/:projectId/exports/risks', authenticate, requireProjectAccess, asyn
     })
 
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Arlonecs Project Controls'
+    wb.creator = 'Aurum Project Controls'
     wb.created = new Date()
 
     const ws = wb.addWorksheet('Risk Register', { pageSetup: { orientation: 'landscape', fitToPage: true } })
@@ -132,7 +132,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
     })
 
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Arlonecs Project Controls'
+    wb.creator = 'Aurum Project Controls'
 
     const ws = wb.addWorksheet('CE Summary', { pageSetup: { orientation: 'landscape', fitToPage: true } })
     addTitleRow(ws, `Compensation Event Summary — ${project?.name}`, 8)

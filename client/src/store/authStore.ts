@@ -23,6 +23,6 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token) => set({ user, token }),
       logout: () => set({ user: null, token: null }),
     }),
-    { name: 'arlonecs-auth' },
+    { name: 'aurum-auth' },
   ),
 )

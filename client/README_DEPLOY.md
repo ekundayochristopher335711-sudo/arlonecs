@@ -1,4 +1,4 @@
-# Vercel Deployment for Arlonecs Client
+# Vercel Deployment for Aurum Client
 
 This file explains how to deploy the `client/` app to Vercel and configure it to work with the backend.
 
@@ -11,7 +11,7 @@ This file explains how to deploy the `client/` app to Vercel and configure it to
 
 ## Environment Variables
 Set this variable in Vercel:
-- `VITE_API_URL` — the base URL of your backend, for example `https://arlonecs-api.vercel.app`.
+- `VITE_API_URL` — the base URL of your backend, for example `https://aurum-api.vercel.app`.
 
 ## Notes
 - Local development uses `client/.env.example` and the Vite default proxy behavior.

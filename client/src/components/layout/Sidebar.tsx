@@ -68,9 +68,9 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Arlonecs" className="w-8 h-8 shrink-0" />
+          <img src="/logo.svg" alt="Aurum" className="w-8 h-8 shrink-0" />
           <div className="min-w-0">
-            <p className="text-white font-semibold text-sm leading-none">Arlonecs</p>
+            <p className="text-white font-semibold text-sm leading-none">Aurum</p>
             <p className="text-slate-500 text-xs mt-0.5 truncate">Project Controls</p>
           </div>
         </div>

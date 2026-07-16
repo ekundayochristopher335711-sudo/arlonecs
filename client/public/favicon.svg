@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#34D399"/>
-      <stop offset="50%" stop-color="#14B8A6"/>
-      <stop offset="100%" stop-color="#22D3EE"/>
+    <linearGradient id="fGold" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+    <linearGradient id="fBlue" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
     </linearGradient>
   </defs>
-  <!-- Solid gradient hexagon fills the tab icon; A reads even at 16px -->
-  <polygon points="50,1 93,25 93,75 50,99 7,75 7,25"
-           fill="url(#g)" stroke="none" stroke-linejoin="round"/>
-  <path d="M50 22 L71 78" fill="none" stroke="#071A26" stroke-width="12" stroke-linecap="round"/>
-  <path d="M50 22 L29 78" fill="none" stroke="#071A26" stroke-width="12" stroke-linecap="round"/>
-  <path d="M38 60 L62 60" fill="none" stroke="#071A26" stroke-width="11" stroke-linecap="round"/>
+  <!-- bold marks so the icon reads at 16px: two blue bars + gold arrow -->
+  <rect x="10" y="48" width="16" height="42" rx="4" fill="url(#fBlue)"/>
+  <rect x="32" y="30" width="16" height="60" rx="4" fill="url(#fBlue)"/>
+  <polygon points="72,4 96,58 82,58 72,32 62,58 48,58" fill="url(#fGold)"/>
 </svg>

@@ -1,16 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#34D399"/>
-      <stop offset="50%" stop-color="#14B8A6"/>
-      <stop offset="100%" stop-color="#22D3EE"/>
+    <linearGradient id="auGold" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="55%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+    <linearGradient id="auBlue" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="auSwoosh" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#64748B"/>
     </linearGradient>
   </defs>
-  <!-- Solid gradient hexagon — engineering / structure -->
-  <polygon points="50,3 91,26 91,74 50,97 9,74 9,26"
-           fill="url(#g)" stroke="none" stroke-linejoin="round"/>
-  <!-- Bold A monogram in deep ink -->
-  <path d="M50 25 L69 75" fill="none" stroke="#071A26" stroke-width="10" stroke-linecap="round"/>
-  <path d="M50 25 L31 75" fill="none" stroke="#071A26" stroke-width="10" stroke-linecap="round"/>
-  <path d="M39 59 L61 59" fill="none" stroke="#071A26" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- rising blue bars -->
+  <rect x="12" y="56" width="11" height="26" rx="2.5" fill="url(#auBlue)"/>
+  <rect x="27" y="44" width="11" height="38" rx="2.5" fill="url(#auBlue)"/>
+  <rect x="42" y="30" width="11" height="52" rx="2.5" fill="url(#auBlue)"/>
+
+  <!-- gold ascending arrow, shaped like an open A -->
+  <polygon points="67,6 86,50 75.5,50 67,29 58.5,50 48,50" fill="url(#auGold)"/>
+
+  <!-- swoosh sweeping under and up -->
+  <path d="M6 74 Q 46 100 94 40" fill="none" stroke="url(#auSwoosh)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- sparkle -->
+  <path d="M87 8 l2.6 6.4 6.4 2.6 -6.4 2.6 -2.6 6.4 -2.6 -6.4 -6.4 -2.6 6.4 -2.6 z" fill="#FBBF24"/>
 </svg>

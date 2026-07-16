@@ -1,4 +1,4 @@
-# Arlonecs Project Controls — Setup Guide
+# Aurum Project Controls — Setup Guide
 
 ## Prerequisites
 - Node.js 20+
@@ -47,7 +47,7 @@ This repo uses separate frontend and backend folders so you can deploy the React
 - Deploy the `client/` folder as a Vite app.
 - Build command: `npm run build`
 - Output directory: `dist`
-- Set `VITE_API_URL` in Vercel to your backend URL, for example `https://arlonecs-api.example.com`
+- Set `VITE_API_URL` in Vercel to your backend URL, for example `https://aurum-api.example.com`
 
 ### Backend
 - Deploy the `server/` folder to any Node host that supports Express.
@@ -70,7 +70,7 @@ For the backend:
 
 | Variable      | Default                                              | Description           |
 |---------------|------------------------------------------------------|-----------------------|
-| DATABASE_URL  | postgresql://arlonecs:arlonecs_secret@localhost:5432/arlonecs_db | PostgreSQL connection |
+| DATABASE_URL  | postgresql://aurum:aurum_secret@localhost:5432/aurum_db | PostgreSQL connection |
 | JWT_SECRET    | (required)                                           | JWT signing secret    |
 | CLIENT_URL    | http://localhost:5173                               | CORS allowed origin   |
 | PORT          | 5000                                                | API server port       |
@@ -81,8 +81,8 @@ For the backend:
 
 | Role               | Email                  | Password      |
 |--------------------|------------------------|---------------|
-| Admin              | admin@arlonecs.com        | Admin1234!    |
-| Commercial Manager | manager@arlonecs.com      | Manager1234!  |
+| Admin              | admin@aurum.com        | Admin1234!    |
+| Commercial Manager | manager@aurum.com      | Manager1234!  |
 
 ---
 

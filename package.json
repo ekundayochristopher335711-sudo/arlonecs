@@ -1,5 +1,5 @@
 {
-  "name": "arlonecs-project-controls",
+  "name": "aurum-project-controls",
   "version": "1.0.0",
   "private": true,
   "workspaces": ["client", "server"],

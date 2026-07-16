@@ -11,7 +11,7 @@ This repo uses an Express API server with Prisma. You can keep the backend logic
 ## Environment variables
 - `DATABASE_URL` — Supabase Postgres URL
 - `JWT_SECRET` — secure JWT signing key
-- `CLIENT_URL` — Vercel frontend URL, e.g. `https://arlonecs-app.vercel.app`
+- `CLIENT_URL` — Vercel frontend URL, e.g. `https://aurum-app.vercel.app`
 - `PORT` — optional port for your backend host
 
 ## Notes

@@ -13,14 +13,14 @@ const transporter = nodemailer.createTransport({
 
 const emailConfigured = () => Boolean(process.env.SMTP_USER && process.env.SMTP_PASS)
 
-const FROM = () => `"Arlonecs Project Controls" <${process.env.SMTP_USER}>`
+const FROM = () => `"Aurum Project Controls" <${process.env.SMTP_USER}>`
 
 function shell(inner: string): string {
   return `
     <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#080F1C;padding:20px 24px;border-radius:8px 8px 0 0">
-        <h2 style="color:#FFFFFF;margin:0;font-size:18px">Arlonecs Project Controls</h2>
-        <p style="color:#34D399;margin:4px 0 0;font-size:12px">NEC Contract Workflow Engine</p>
+        <h2 style="color:#FFFFFF;margin:0;font-size:18px">Aurum Project Controls</h2>
+        <p style="color:#FBBF24;margin:4px 0 0;font-size:12px">NEC Contract Workflow Engine</p>
       </div>
       <div style="background:#fff;padding:24px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 8px 8px">
         ${inner}
@@ -93,8 +93,8 @@ export async function sendOverdueNotifications() {
       html: shell(`
         ${table(`⚠️ Overdue Compensation Events — ${project.name}`, overdue, '#DC2626')}
         ${table('⏳ Response due within 3 days', dueSoon, '#D97706')}
-        ${table('📋 Quotation due (NEC cl. 62.3)', quotationDue, '#0D9488', (ce) => ce.dateQuotationDue)}
-        <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#0D9488;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Arlonecs Project Controls</a></p>
+        ${table('📋 Quotation due (NEC cl. 62.3)', quotationDue, '#B45309', (ce) => ce.dateQuotationDue)}
+        <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#B45309;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Aurum Project Controls</a></p>
       `),
     })
   }
@@ -137,14 +137,14 @@ export async function sendInvitationEmail(
   await transporter.sendMail({
     from: FROM(),
     to: email,
-    subject: `You've been invited to ${projectName} — Arlonecs Project Controls`,
+    subject: `You've been invited to ${projectName} — Aurum Project Controls`,
     html: shell(`
       <h3 style="color:#080F1C;font-size:20px;margin:0 0 8px">You're invited</h3>
       <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
         <strong>${inviterName}</strong> has invited you to join
         <strong>${projectName}</strong> as a <strong>${role.replace('_', ' ')}</strong>.
       </p>
-      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#0D9488" style="border-radius:8px"><a href="${inviteUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Accept Invitation</a></td></tr></table>
+      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#B45309" style="border-radius:8px"><a href="${inviteUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Accept Invitation</a></td></tr></table>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
         This invitation expires in 7 days. If you weren't expecting this, you can ignore this email.
       </p>
@@ -162,13 +162,13 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   await transporter.sendMail({
     from: FROM(),
     to: email,
-    subject: 'Reset your password — Arlonecs Project Controls',
+    subject: 'Reset your password — Aurum Project Controls',
     html: shell(`
       <h3 style="color:#080F1C;font-size:20px;margin:0 0 8px">Password reset</h3>
       <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
         Hi ${name}, we received a request to reset your password. This link expires in 1 hour.
       </p>
-      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#0D9488" style="border-radius:8px"><a href="${resetUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Reset Password</a></td></tr></table>
+      <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#B45309" style="border-radius:8px"><a href="${resetUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Reset Password</a></td></tr></table>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
         If you didn't request this, you can safely ignore this email — your password will not change.
       </p>

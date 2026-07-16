@@ -4,35 +4,35 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Aurum identity: gold arrow + blue bars (client-approved logo)
         brand: {
-          green: '#34D399',
-          yellow: '#22D3EE',
-          'green-light': '#5EEAD4',
+          green: '#F59E0B',
+          yellow: '#FBBF24',
+          'green-light': '#FCD34D',
         },
-        // Accent scale (legacy token name "gold" — values are now teal)
         gold: {
-          50: '#F0FDFA',
-          100: '#CCFBF1',
-          200: '#99F6E4',
-          400: '#2DD4BF',
-          500: '#14B8A6',
-          600: '#0D9488',
-          700: '#0F766E',
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#B45309',
+          700: '#92400E',
         },
         navy: {
-          50: '#EEF4F6',
-          100: '#D8E4E8',
-          600: '#16455A',
-          700: '#103648',
-          800: '#0B2534',
-          900: '#071A26',
-          950: '#04111A',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          600: '#1E40AF',
+          700: '#1E3A8A',
+          800: '#172E6E',
+          900: '#0F1F4B',
+          950: '#0A1533',
         },
         surface: {
           DEFAULT: '#FFFFFF',
-          50: '#F3F7F8',
-          100: '#E9F0F2',
-          200: '#DBE6E9',
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
         },
       },
       fontFamily: {

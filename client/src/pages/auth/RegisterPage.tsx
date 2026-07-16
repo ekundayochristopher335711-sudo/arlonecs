@@ -66,9 +66,9 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-navy-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/logo.svg" alt="Arlonecs" className="w-12 h-12 mx-auto mb-4" />
+          <img src="/logo.svg" alt="Aurum" className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-semibold text-white">Create your account</h1>
-          <p className="text-slate-400 text-sm mt-2">Start managing NEC contracts with Arlonecs</p>
+          <p className="text-slate-400 text-sm mt-2">Start managing NEC contracts with Aurum</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-7">

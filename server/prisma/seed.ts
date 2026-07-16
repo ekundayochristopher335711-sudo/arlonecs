@@ -8,12 +8,12 @@ const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DIRECT_URL || process.env.DATABASE_URL } },
 })
 
-// One-time rename of legacy Aurum-branded accounts to the Arlonecs domain,
-// preserving passwords and project memberships (no duplicate users).
+// One-time rename of interim Arlonecs-branded accounts back to the Aurum
+// domain, preserving passwords and project memberships (no duplicate users).
 async function migrateLegacyEmails() {
   const renames: Array<[string, string]> = [
-    ['admin@aurum.com', 'admin@arlonecs.com'],
-    ['manager@aurum.com', 'manager@arlonecs.com'],
+    ['admin@arlonecs.com', 'admin@aurum.com'],
+    ['manager@arlonecs.com', 'manager@aurum.com'],
   ]
   for (const [oldEmail, newEmail] of renames) {
     const legacy = await prisma.user.findUnique({ where: { email: oldEmail } })
@@ -34,10 +34,10 @@ async function main() {
 
   const adminPassword = await bcrypt.hash('ARLOTECH', 12)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@arlonecs.com' },
+    where: { email: 'admin@aurum.com' },
     update: { password: adminPassword },
     create: {
-      email: 'admin@arlonecs.com',
+      email: 'admin@aurum.com',
       password: adminPassword,
       name: 'System Admin',
       role: Role.ADMIN,
@@ -46,10 +46,10 @@ async function main() {
 
   const cmPassword = await bcrypt.hash('Manager1234!', 12)
   const cm = await prisma.user.upsert({
-    where: { email: 'manager@arlonecs.com' },
+    where: { email: 'manager@aurum.com' },
     update: {},
     create: {
-      email: 'manager@arlonecs.com',
+      email: 'manager@aurum.com',
       password: cmPassword,
       name: 'Commercial Manager',
       role: Role.COMMERCIAL_MANAGER,
@@ -65,7 +65,7 @@ async function main() {
       description: 'Major highway infrastructure project under NEC4 ECC contract',
       contractType: ContractType.NEC4,
       clientName: 'National Highways',
-      contractorName: 'Arlonecs Civil Engineering Ltd',
+      contractorName: 'Aurum Civil Engineering Ltd',
       contractValue: 45000000,
       startDate: new Date('2024-01-15'),
       endDate: new Date('2026-06-30'),
@@ -79,8 +79,8 @@ async function main() {
   })
 
   console.log('Seed complete.')
-  console.log('Admin login: admin@arlonecs.com / ARLOTECH')
-  console.log('Manager login: manager@arlonecs.com / Manager1234!')
+  console.log('Admin login: admin@aurum.com / ARLOTECH')
+  console.log('Manager login: manager@aurum.com / Manager1234!')
   console.log('Demo project:', project.name)
 }
 

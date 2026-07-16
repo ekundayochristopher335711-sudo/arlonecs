@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: arlonecs
-      POSTGRES_PASSWORD: arlonecs_secret
-      POSTGRES_DB: arlonecs_db
+      POSTGRES_USER: aurum
+      POSTGRES_PASSWORD: aurum_secret
+      POSTGRES_DB: aurum_db
     ports:
       - '5432:5432'
     volumes:
@@ -21,8 +21,8 @@ services:
     depends_on:
       - postgres
     environment:
-      DATABASE_URL: postgresql://arlonecs:arlonecs_secret@postgres:5432/arlonecs_db
-      DIRECT_URL: postgresql://arlonecs:arlonecs_secret@postgres:5432/arlonecs_db
+      DATABASE_URL: postgresql://aurum:aurum_secret@postgres:5432/aurum_db
+      DIRECT_URL: postgresql://aurum:aurum_secret@postgres:5432/aurum_db
       JWT_SECRET: change_this_in_production
       CLIENT_URL: http://localhost:5173
       PORT: 5000

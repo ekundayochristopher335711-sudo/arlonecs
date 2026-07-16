@@ -109,7 +109,7 @@ export default function ProjectsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Client Name" placeholder="National Highways" {...register('clientName')} />
-            <Input label="Contractor Name" placeholder="Arlonecs Civil Ltd" {...register('contractorName')} />
+            <Input label="Contractor Name" placeholder="Aurum Civil Ltd" {...register('contractorName')} />
           </div>
           <Textarea label="Description" placeholder="Brief project overview…" rows={3} {...register('description')} />
           {mutation.error && <p className="text-sm text-red-600">Failed to create project. Please try again.</p>}

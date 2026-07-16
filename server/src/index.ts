@@ -11,7 +11,7 @@ cron.schedule('0 8 * * *', () => {
 })
 
 app.listen(PORT, () => {
-  console.log(`Arlonecs Project Controls API — port ${PORT}`)
+  console.log(`Aurum Project Controls API — port ${PORT}`)
 })
 
 export default app
