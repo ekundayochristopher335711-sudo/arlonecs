@@ -16,3 +16,9 @@ export const addProjectMember = (projectId: string, userId: string, role: string
 
 export const removeProjectMember = (projectId: string, userId: string) =>
   api.delete(`/projects/${projectId}/members/${userId}`)
+
+export const completeProject = (projectId: string) =>
+  api.post<Project>(`/projects/${projectId}/complete`).then((r) => r.data)
+
+export const reopenProject = (projectId: string) =>
+  api.post<Project>(`/projects/${projectId}/reopen`).then((r) => r.data)

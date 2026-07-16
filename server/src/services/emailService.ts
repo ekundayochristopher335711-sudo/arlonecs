@@ -37,6 +37,8 @@ export async function sendOverdueNotifications() {
   const dueCEs = await prisma.compensationEvent.findMany({
     where: {
       status: { not: 'CLOSED' },
+      // Completed projects are archived — no more reminder emails
+      project: { isActive: true },
       OR: [
         { dateResponseDue: { lt: soon } },
         // cl. 62.3 quotation clock — runs while the CE awaits a quotation

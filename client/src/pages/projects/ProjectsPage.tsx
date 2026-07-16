@@ -37,8 +37,13 @@ function ProjectCard({ project }: { project: Project }) {
         <div className="w-10 h-10 rounded-lg bg-navy-900 flex items-center justify-center shrink-0">
           <Building2 className="w-5 h-5 text-gold-500" />
         </div>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${project.contractType === 'NEC4' ? 'bg-gold-100 text-gold-700' : 'bg-blue-100 text-blue-700'}`}>
-          {project.contractType}
+        <span className="flex items-center gap-1.5">
+          {project.isActive === false && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">Completed</span>
+          )}
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${project.contractType === 'NEC4' ? 'bg-gold-100 text-gold-700' : 'bg-blue-100 text-blue-700'}`}>
+            {project.contractType}
+          </span>
         </span>
       </div>
       <h3 className="font-semibold text-navy-900 text-base leading-snug mb-1">{project.name}</h3>
@@ -78,12 +83,18 @@ export default function ProjectsPage() {
     },
   })
 
+  const activeProjects = projects.filter((p) => p.isActive !== false)
+  const completedProjects = projects.filter((p) => p.isActive === false)
+
   return (
     <div className="max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy-900">Projects</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{projects.length} active project{projects.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            {activeProjects.length} active project{activeProjects.length !== 1 ? 's' : ''}
+            {completedProjects.length > 0 && ` · ${completedProjects.length} completed`}
+          </p>
         </div>
         {canCreate && <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button>}
       </div>
@@ -95,9 +106,22 @@ export default function ProjectsPage() {
       ) : projects.length === 0 ? (
         <EmptyState title="No projects yet" description={canCreate ? 'Create your first NEC project to get started.' : 'Projects you are invited to will appear here.'} action={canCreate ? <Button icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>New Project</Button> : undefined} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((p) => <ProjectCard key={p.id} project={p} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {activeProjects.map((p) => <ProjectCard key={p.id} project={p} />)}
+          </div>
+          {completedProjects.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 mt-10 mb-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed — read-only archive</p>
+                <div className="flex-1 border-t border-dashed border-slate-200" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75">
+                {completedProjects.map((p) => <ProjectCard key={p.id} project={p} />)}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       <Modal open={modalOpen} onClose={() => { setModalOpen(false); reset() }} title="New Project" size="lg">

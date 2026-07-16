@@ -129,6 +129,32 @@ router.post('/:projectId/members',
   },
 )
 
+// Complete a project — freezes it read-only, drops it from reminder emails.
+// Inline admin check (not requireProjectRole) so reopen also works while frozen.
+const isProjectAdmin = (req: AuthRequest) => req.user!.role === 'ADMIN' || req.projectRole === 'ADMIN'
+
+router.post('/:projectId/complete', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  if (!isProjectAdmin(req)) { res.status(403).json({ message: 'Only project admins can complete a project' }); return }
+  try {
+    const project = await prisma.project.update({ where: { id: req.params.projectId }, data: { isActive: false } })
+    await logAudit({ userId: req.user!.id, projectId: project.id, entityType: 'Project', entityId: project.id, action: 'STATUS_CHANGE', changes: { status: { old: 'ACTIVE', new: 'COMPLETED' } }, ipAddress: req.ip })
+    res.json(project)
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+router.post('/:projectId/reopen', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  if (!isProjectAdmin(req)) { res.status(403).json({ message: 'Only project admins can reopen a project' }); return }
+  try {
+    const project = await prisma.project.update({ where: { id: req.params.projectId }, data: { isActive: true } })
+    await logAudit({ userId: req.user!.id, projectId: project.id, entityType: 'Project', entityId: project.id, action: 'STATUS_CHANGE', changes: { status: { old: 'COMPLETED', new: 'ACTIVE' } }, ipAddress: req.ip })
+    res.json(project)
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // Remove a member from the project (project ADMIN only, never yourself)
 router.delete('/:projectId/members/:userId',
   authenticate,

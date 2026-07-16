@@ -5,6 +5,7 @@ import prisma from '../config/database'
 export interface AuthRequest extends Request {
   user?: { id: string; email: string; role: string }
   projectRole?: string
+  projectActive?: boolean
 }
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {

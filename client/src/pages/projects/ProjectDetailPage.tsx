@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail, Copy } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail, Copy, Archive, ArchiveRestore } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { getProject, addProjectMember, removeProjectMember } from '../../api/projects'
+import { getProject, addProjectMember, removeProjectMember, completeProject, reopenProject } from '../../api/projects'
+import { getDashboard } from '../../api/dashboard'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { useToast } from '../../components/ui/Toast'
 import { useAuthStore } from '../../store/authStore'
@@ -30,9 +32,10 @@ export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canEdit, role: myProjectRole } = useProjectRole()
+  const { canEdit, role: myProjectRole, isCompleted } = useProjectRole()
   const me = useAuthStore((s) => s.user)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [completeOpen, setCompleteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteLink, setInviteLink] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -104,7 +107,37 @@ export default function ProjectDetailPage() {
     onError: () => toast.error('Could not remove member.'),
   })
 
-  const canManageTeam = myProjectRole === 'ADMIN'
+  const completeMutation = useMutation({
+    mutationFn: () => completeProject(projectId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast.success('Project completed — it is now a read-only archive')
+      setCompleteOpen(false)
+    },
+    onError: () => { toast.error('Could not complete the project.'); setCompleteOpen(false) },
+  })
+
+  const reopenMutation = useMutation({
+    mutationFn: () => reopenProject(projectId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast.success('Project reopened — editing and reminders are back on')
+    },
+    onError: () => toast.error('Could not reopen the project.'),
+  })
+
+  const isProjectAdmin = myProjectRole === 'ADMIN'
+  // Open-item counts for the completion warning
+  const { data: dash } = useQuery({
+    queryKey: ['dashboard', projectId],
+    queryFn: () => getDashboard(projectId!),
+    enabled: !!projectId && isProjectAdmin,
+  })
+  const openItems = (dash?.kpis.openEWs ?? 0) + (dash?.kpis.openCEs ?? 0) + (dash?.kpis.openRisks ?? 0)
+
+  const canManageTeam = isProjectAdmin && !isCompleted
 
   // Invitation rights follow the user's role ON THIS PROJECT, not their global role
   const canInvite = canEdit
@@ -141,12 +174,35 @@ export default function ProjectDetailPage() {
             {project.contractValue && <span className="text-sm text-slate-500">Value: <span className="font-medium text-slate-700">£{project.contractValue.toLocaleString('en-GB')}</span></span>}
           </div>
         </div>
-        {canInvite && (
-          <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink('') }}>
-            Invite Member
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canInvite && (
+            <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink('') }}>
+              Invite Member
+            </Button>
+          )}
+          {isProjectAdmin && !isCompleted && (
+            <Button variant="outline" icon={<Archive className="w-4 h-4" />} onClick={() => setCompleteOpen(true)}>
+              Complete Project
+            </Button>
+          )}
+          {isProjectAdmin && isCompleted && (
+            <Button variant="outline" icon={<ArchiveRestore className="w-4 h-4" />} loading={reopenMutation.isPending} onClick={() => reopenMutation.mutate()}>
+              Reopen Project
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Completed banner */}
+      {isCompleted && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <Archive className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-sm text-amber-800">
+            <span className="font-semibold">This project is completed and read-only.</span>{' '}
+            All records are preserved for the contractual archive — nothing can be added or changed, and daily deadline reminders are paused. A project admin can reopen it at any time.
+          </p>
+        </div>
+      )}
 
       {/* Module grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -243,6 +299,20 @@ export default function ProjectDetailPage() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={completeOpen}
+        title={`Complete ${project.name}?`}
+        message={
+          openItems > 0
+            ? `⚠️ ${dash?.kpis.openEWs ?? 0} early warning(s), ${dash?.kpis.openRisks ?? 0} risk(s) and ${dash?.kpis.openCEs ?? 0} compensation event(s) are still open. The project will become read-only and daily reminders will stop. You can reopen it later.`
+            : 'The project will become a read-only archive: records preserved, exports available, daily reminders stopped. You can reopen it later.'
+        }
+        confirmLabel="Complete Project"
+        loading={completeMutation.isPending}
+        onConfirm={() => completeMutation.mutate()}
+        onCancel={() => setCompleteOpen(false)}
+      />
 
       {/* Invite modal */}
       <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite Team Member" size="sm">

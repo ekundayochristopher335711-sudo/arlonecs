@@ -14,15 +14,18 @@ export function useProjectRole() {
     staleTime: 1000 * 60 * 5,
   })
 
-  if (!user || !projectId) return { role: null, isViewer: true, canEdit: false }
+  // Completed projects are a read-only archive for everyone, admins included
+  const isCompleted = project ? project.isActive === false : false
 
-  // Global admins can always edit
-  if (user.role === 'ADMIN') return { role: 'ADMIN', isViewer: false, canEdit: true }
+  if (!user || !projectId) return { role: null, isViewer: true, canEdit: false, isCompleted }
+
+  // Global admins can always edit (while the project is active)
+  if (user.role === 'ADMIN') return { role: 'ADMIN', isViewer: false, canEdit: !isCompleted, isCompleted }
 
   const member = project?.members?.find((m) => m.user.id === user.id)
   const role = member?.role ?? 'VIEWER'
   const isViewer = role === 'VIEWER'
-  const canEdit = !isViewer
+  const canEdit = !isViewer && !isCompleted
 
-  return { role, isViewer, canEdit }
+  return { role, isViewer, canEdit, isCompleted }
 }
