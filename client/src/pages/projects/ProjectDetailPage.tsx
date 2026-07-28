@@ -17,12 +17,22 @@ import Button from '../../components/ui/Button'
 import { format, parseISO } from 'date-fns'
 
 const inviteSchema = z.object({
-  email: z.string().email('Invalid email'),
-  role: z.enum(['ADMIN', 'COMMERCIAL_MANAGER', 'VIEWER']),
+  email: z.string().email('Invalid email address'),
+  role: z.enum(['VIEWER', 'COMMERCIAL_MANAGER', 'ADMIN']),
 })
 type InviteForm = z.infer<typeof inviteSchema>
 
-const roleColors: Record<string, string> = {
+type ProjectRole = 'ADMIN' | 'COMMERCIAL_MANAGER' | 'VIEWER';
+
+type Invitation = {
+  id: string;
+  email: string;
+  role: ProjectRole;
+  expiresAt: string;
+  token: string;
+};
+
+const roleColors: Record<ProjectRole, string> = {
   ADMIN: 'bg-gold-100 text-gold-700',
   COMMERCIAL_MANAGER: 'bg-blue-100 text-blue-700',
   VIEWER: 'bg-slate-100 text-slate-600',
@@ -38,6 +48,7 @@ export default function ProjectDetailPage() {
   const [completeOpen, setCompleteOpen] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteLink, setInviteLink] = useState('')
+  const [inviteToken, setInviteToken] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
   const toast = useToast()
 
@@ -62,7 +73,7 @@ export default function ProjectDetailPage() {
     enabled: !!projectId,
   })
 
-  const { data: pendingInvites = [] } = useQuery({
+  const { data: pendingInvites = [] } = useQuery<Invitation[]>({
     queryKey: ['invitations', projectId],
     queryFn: () => getInvitations(projectId!),
     enabled: !!projectId && canEdit,
@@ -77,8 +88,14 @@ export default function ProjectDetailPage() {
     mutationFn: (data: InviteForm) => sendInvitation(projectId!, data.email, data.role),
     onSuccess: (res: { token?: string }, vars) => {
       queryClient.invalidateQueries({ queryKey: ['invitations', projectId] })
-      setInviteSuccess(`Invitation created for ${vars.email}`)
-      setInviteLink(res.token ? `${window.location.origin}/accept-invitation/${res.token}` : '')
+      setInviteSuccess(`Invitation created for ${vars.email}.`)
+      if (res.token) {
+        setInviteLink(`${window.location.origin}/accept-invitation/${res.token}`)
+        setInviteToken(res.token)
+      } else {
+        setInviteLink('')
+        setInviteToken('')
+      }
       setInviteEmail(vars.email)
       reset()
     },
@@ -176,7 +193,7 @@ export default function ProjectDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {canInvite && (
-            <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink('') }}>
+            <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink(''); setInviteToken(''); }}>
               Invite Member
             </Button>
           )}
@@ -273,7 +290,7 @@ export default function ProjectDetailPage() {
             <div className="px-5 py-3 border-t border-slate-100 border-dashed">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Invitations</p>
             </div>
-            {(pendingInvites as { id: string; email: string; role: string; expiresAt: string; token: string }[]).map((inv) => (
+            {pendingInvites.map((inv) => (
               <div key={inv.id} className="px-5 py-3 flex items-center gap-3 border-t border-dashed border-slate-100 bg-slate-50/50">
                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4 text-slate-400" />
@@ -345,10 +362,10 @@ export default function ProjectDetailPage() {
                   <p className="text-xs text-slate-500">Share this link with them directly — it works even without email set up:</p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-2 truncate">{inviteLink}</code>
-                    <Button type="button" size="sm" variant="outline" icon={<Copy className="w-3.5 h-3.5" />} onClick={() => copyLink(inviteLink.split('/accept-invitation/')[1])}>
+                    <Button type="button" size="sm" variant="outline" icon={<Copy className="w-3.5 h-3.5" />} onClick={() => copyLink(inviteToken)}>
                       Copy
                     </Button>
-                    <Button type="button" size="sm" variant="outline" icon={<Mail className="w-3.5 h-3.5" />} onClick={() => emailLink(inviteEmail, inviteLink.split('/accept-invitation/')[1])}>
+                    <Button type="button" size="sm" variant="outline" icon={<Mail className="w-3.5 h-3.5" />} onClick={() => emailLink(inviteEmail, inviteToken)}>
                       Email it
                     </Button>
                   </div>

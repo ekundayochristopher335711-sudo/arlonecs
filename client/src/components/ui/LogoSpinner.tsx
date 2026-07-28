@@ -41,12 +41,7 @@ export function PageLoader() {
             </defs>
             <circle cx="50" cy="50" r="44" fill="none" stroke="url(#loaderGrad)" strokeWidth="8" strokeLinecap="round" strokeDasharray="200 76" />
           </svg>
-          {/* Static mark: blue bars + gold arrow */}
-          <svg width="64" height="64" viewBox="0 0 100 100" className="absolute inset-0 p-3">
-            <rect x="22" y="52" width="12" height="28" rx="3" fill="#3B82F6" opacity="0.9" />
-            <rect x="40" y="38" width="12" height="42" rx="3" fill="#60A5FA" opacity="0.9" />
-            <polygon points="68,16 82,50 73,50 68,35 63,50 54,50" fill="#FBBF24" />
-          </svg>
+          <img src="/logo.png" alt="Aurum" className="absolute inset-0 p-3" />
         </div>
         <div className="text-center">
           <p className="text-white font-semibold text-base">Aurum Project Controls</p>

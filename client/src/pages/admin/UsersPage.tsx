@@ -86,8 +86,9 @@ export default function UsersPage() {
                       ) : (
                         <select
                           value={u.role}
+                          disabled={mutation.isPending && mutation.variables?.id === u.id}
                           onChange={(e) => mutation.mutate({ id: u.id, data: { role: e.target.value } })}
-                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
+                          className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
                         >
                           <option value="VIEWER">Viewer</option>
                           <option value="COMMERCIAL_MANAGER">Commercial Manager</option>

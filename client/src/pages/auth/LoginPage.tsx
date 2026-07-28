@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Aurum" className="w-10 h-10" />
+            <img src="/logo.png" alt="Aurum" className="w-10 h-10" />
             <div>
               <p className="text-white font-semibold text-lg leading-none">Aurum</p>
               <p className="text-brand-green text-xs font-medium mt-0.5">Project Controls</p>
@@ -89,7 +89,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <img src="/logo.svg" alt="Aurum" className="w-9 h-9" />
+            <img src="/logo.png" alt="Aurum" className="w-9 h-9" />
             <p className="font-semibold text-navy-900 text-lg">Aurum Project Controls</p>
           </div>
 
