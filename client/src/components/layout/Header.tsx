@@ -23,7 +23,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       </button>
 
       <div className="flex-1 lg:hidden flex items-center gap-2">
-        <img src="/logo.png" alt="Aurum" className="w-6 h-6" />
+        <img src="/logo.png" alt="Aurum" className="w-10 h-10" />
         <span className="text-sm font-semibold text-slate-800">Aurum</span>
       </div>
 
