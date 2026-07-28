@@ -8,49 +8,47 @@ const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DIRECT_URL || process.env.DATABASE_URL } },
 })
 
-// One-time rename of interim Arlonecs-branded accounts back to the Aurum
-// domain, preserving passwords and project memberships (no duplicate users).
-async function migrateLegacyEmails() {
-  const renames: Array<[string, string]> = [
-    ['admin@arlonecs.com', 'admin@aurum.com'],
-    ['manager@arlonecs.com', 'manager@aurum.com'],
-  ]
-  for (const [oldEmail, newEmail] of renames) {
-    const legacy = await prisma.user.findUnique({ where: { email: oldEmail } })
-    if (!legacy) continue
-    const target = await prisma.user.findUnique({ where: { email: newEmail } })
-    if (target) {
-      // New account already exists — retire the legacy one
-      await prisma.user.update({ where: { id: legacy.id }, data: { isActive: false } })
-    } else {
-      await prisma.user.update({ where: { id: legacy.id }, data: { email: newEmail } })
-    }
-    console.log(`Migrated legacy account ${oldEmail} → ${newEmail}`)
-  }
-}
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@aurum.com'
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'ARLOTECH'
 
 async function main() {
-  await migrateLegacyEmails()
+  // Ensure an admin exists so the platform is never locked out. The password is
+  // only set when the account is first created — a password changed later by the
+  // owner must survive every redeploy.
+  const existingAdmin = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } })
+  if (!existingAdmin) {
+    await prisma.user.create({
+      data: {
+        email: ADMIN_EMAIL,
+        password: await bcrypt.hash(ADMIN_PASSWORD, 12),
+        name: 'System Admin',
+        role: Role.ADMIN,
+        isActive: true,
+      },
+    })
+    console.log(`Created admin account: ${ADMIN_EMAIL}`)
+  } else {
+    // Never lock the owner out of their own platform
+    if (!existingAdmin.isActive || existingAdmin.role !== Role.ADMIN) {
+      await prisma.user.update({ where: { id: existingAdmin.id }, data: { isActive: true, role: Role.ADMIN } })
+    }
+    console.log(`Admin account present: ${ADMIN_EMAIL} (password unchanged)`)
+  }
 
-  const adminPassword = await bcrypt.hash('ARLOTECH', 12)
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@aurum.com' },
-    update: { password: adminPassword },
-    create: {
-      email: 'admin@aurum.com',
-      password: adminPassword,
-      name: 'System Admin',
-      role: Role.ADMIN,
-    },
-  })
+  // Demo content is opt-in only. Without SEED_DEMO=true a wiped database stays
+  // clean across deploys, which is what a live/client environment needs.
+  if (process.env.SEED_DEMO !== 'true') {
+    console.log('Seed complete — no demo data (set SEED_DEMO=true to add it).')
+    return
+  }
 
-  const cmPassword = await bcrypt.hash('Manager1234!', 12)
+  const admin = await prisma.user.findUniqueOrThrow({ where: { email: ADMIN_EMAIL } })
   const cm = await prisma.user.upsert({
     where: { email: 'manager@aurum.com' },
     update: {},
     create: {
       email: 'manager@aurum.com',
-      password: cmPassword,
+      password: await bcrypt.hash('Manager1234!', 12),
       name: 'Commercial Manager',
       role: Role.COMMERCIAL_MANAGER,
     },
@@ -78,9 +76,7 @@ async function main() {
     },
   })
 
-  console.log('Seed complete.')
-  console.log('Admin login: admin@aurum.com / ARLOTECH')
-  console.log('Manager login: manager@aurum.com / Manager1234!')
+  console.log('Seed complete (demo data included).')
   console.log('Demo project:', project.name)
 }
 
