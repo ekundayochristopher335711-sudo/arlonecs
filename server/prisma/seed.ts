@@ -12,6 +12,13 @@ const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@aurum.com'
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'ARLOTECH'
 
 async function main() {
+  // Sign-in requires a valid email address, so a malformed SEED_ADMIN_EMAIL
+  // would create an account nobody can ever log into. Fail loudly instead.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ADMIN_EMAIL)) {
+    console.error(`\nSEED_ADMIN_EMAIL is not a valid email address: "${ADMIN_EMAIL}"`)
+    console.error('No admin account created. Fix the variable and redeploy.\n')
+    return
+  }
   // Ensure an admin exists so the platform is never locked out. The password is
   // only set when the account is first created — a password changed later by the
   // owner must survive every redeploy.
