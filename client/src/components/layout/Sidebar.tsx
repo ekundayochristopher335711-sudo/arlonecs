@@ -70,8 +70,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-0">
           <img src="/logo.png" alt="Aurum" className="w-10 h-10 shrink-0" />
           <div className="min-w-0">
-            <p className="text-white font-sans font-semibold text-sm leading-none">Aurum</p>
-            <p className="text-slate-500 text-xs mt-0.5 truncate">Project Controls</p>
+            <p className="text-white font-display font-bold text-base leading-none tracking-wide">AURUM</p>
+            <p className="text-slate-400 font-display text-[10px] mt-1 truncate tracking-[0.18em] uppercase">Project Controls</p>
           </div>
         </div>
       </div>

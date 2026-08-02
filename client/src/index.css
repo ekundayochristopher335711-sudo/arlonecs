@@ -16,7 +16,9 @@
     background-attachment: fixed;
   }
 
-  h1, h2, h3, h4 { @apply tracking-tight; }
+  /* Montserrat headings echo the logo lettering; Inter carries the dense UI */
+  h1, h2, h3 { @apply font-display tracking-tight; }
+  h4 { @apply tracking-tight; }
 }
 
 @layer components {

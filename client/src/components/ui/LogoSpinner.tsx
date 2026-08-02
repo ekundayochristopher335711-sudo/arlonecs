@@ -44,7 +44,8 @@ export function PageLoader() {
           <img src="/logo.png" alt="Aurum" className="absolute inset-0 p-3" />
         </div>
         <div className="text-center">
-          <p className="text-white font-semibold text-base">Aurum Project Controls</p>
+          <p className="text-white font-display font-bold text-lg tracking-wide">AURUM</p>
+          <p className="text-slate-400 font-display text-[10px] tracking-[0.2em] uppercase mt-0.5">Project Controls</p>
           <p className="text-slate-500 text-xs mt-1">Loading…</p>
         </div>
       </div>

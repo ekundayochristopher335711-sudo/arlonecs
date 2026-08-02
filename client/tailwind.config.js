@@ -36,7 +36,10 @@ export default {
         },
       },
       fontFamily: {
+        // Inter for dense UI (tables, forms); Montserrat is the geometric sans
+        // that matches the logo lettering — used for the wordmark and headings.
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Montserrat', 'Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)',

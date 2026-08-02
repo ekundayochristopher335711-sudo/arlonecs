@@ -24,7 +24,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
       <div className="flex-1 lg:hidden flex items-center gap-0">
         <img src="/logo.png" alt="Aurum" className="w-10 h-10" />
-        <span className="text-sm font-sans font-semibold text-slate-800">Aurum</span>
+        <span className="text-base font-display font-bold tracking-wide text-navy-900">AURUM</span>
       </div>
 
       <div className="hidden lg:block flex-1" />
