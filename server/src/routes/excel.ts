@@ -6,6 +6,7 @@ import { authenticate, AuthRequest } from '../middleware/auth'
 import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
 import { nextNumber } from '../services/numberingService'
+import { fileNameFor } from '../services/pdfService'
 
 const router = express.Router()
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
@@ -112,7 +113,7 @@ router.get('/:projectId/exports/risks', authenticate, requireProjectAccess, asyn
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskRegister', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('Content-Disposition', `attachment; filename="Risk-Register-${new Date().toISOString().split('T')[0]}.xlsx"`)
+    res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(project ?? { name: 'Project' }, 'Risk-Register', 'xlsx')}"`)
     await wb.xlsx.write(res)
     res.end()
   } catch (e) {
@@ -185,7 +186,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CESummary', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('Content-Disposition', `attachment; filename="CE-Summary-${new Date().toISOString().split('T')[0]}.xlsx"`)
+    res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(project ?? { name: 'Project' }, 'CE-Summary', 'xlsx')}"`)
     await wb.xlsx.write(res)
     res.end()
   } catch (e) {
@@ -211,13 +212,14 @@ function sendCSV(res: express.Response, filename: string, header: string[], rows
 
 router.get('/:projectId/exports/risks-csv', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
+    const project = await prisma.project.findUnique({ where: { id: req.params.projectId } })
     const risks = await prisma.riskItem.findMany({
       where: { projectId: req.params.projectId },
       include: { earlyWarning: { select: { ewNumber: true } } },
       orderBy: { riskId: 'asc' },
     })
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskRegister', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
-    sendCSV(res, `Risk-Register-${new Date().toISOString().split('T')[0]}.csv`,
+    sendCSV(res, fileNameFor(project ?? { name: 'Project' }, 'Risk-Register', 'csv'),
       ['Risk ID', 'Description', 'Probability (1-5)', 'Cost Impact (GBP)', 'Time Impact (days)', 'Mitigation', 'Owner', 'Linked EW', 'Status'],
       risks.map((r) => [r.riskId, r.description, r.probability, r.costImpact ?? '', r.timeImpact ?? '', r.mitigation ?? '', r.owner ?? '', r.earlyWarning?.ewNumber ?? '', r.status]),
     )
@@ -228,12 +230,13 @@ router.get('/:projectId/exports/risks-csv', authenticate, requireProjectAccess, 
 
 router.get('/:projectId/exports/ces-csv', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
+    const project = await prisma.project.findUnique({ where: { id: req.params.projectId } })
     const ces = await prisma.compensationEvent.findMany({
       where: { projectId: req.params.projectId },
       orderBy: { ceNumber: 'asc' },
     })
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CESummary', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
-    sendCSV(res, `CE-Summary-${new Date().toISOString().split('T')[0]}.csv`,
+    sendCSV(res, fileNameFor(project ?? { name: 'Project' }, 'CE-Summary', 'csv'),
       ['CE No.', 'Title', 'Clause Ref', 'Date Notified', 'Response Due', 'Quotation Due', 'Valuation (GBP)', 'Status', 'Description'],
       ces.map((ce) => [
         ce.ceNumber, ce.title, ce.clauseRef ?? '',

@@ -55,7 +55,7 @@ router.get('/:projectId/early-warnings/:id/pdf', authenticate, requireProjectAcc
     generateEarlyWarningPDF(
       res,
       { ...ew, raisedBy: raisedByUser?.name ?? ew.raisedBy } as unknown as Record<string, unknown>,
-      project?.name || 'Project',
+      project ?? { name: 'Project' },
     )
   } catch {
     res.status(500).json({ message: 'Server error' })

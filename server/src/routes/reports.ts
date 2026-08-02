@@ -19,7 +19,7 @@ router.get('/:projectId/reports/risk-register', authenticate, requireProjectAcce
       orderBy: { riskId: 'asc' },
     })
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'RiskRegister', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
-    generateRiskRegisterPDF(res, risks as unknown as Record<string, unknown>[], project?.name || 'Project')
+    generateRiskRegisterPDF(res, risks as unknown as Record<string, unknown>[], project ?? { name: 'Project' })
   } catch {
     res.status(500).json({ message: 'Server error' })
   }
@@ -33,7 +33,7 @@ router.get('/:projectId/reports/ce-summary', authenticate, requireProjectAccess,
       orderBy: { ceNumber: 'asc' },
     })
     await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CESummary', entityId: req.params.projectId, action: 'EXPORT', ipAddress: req.ip })
-    generateCESummaryPDF(res, ces as unknown as Record<string, unknown>[], project?.name || 'Project')
+    generateCESummaryPDF(res, ces as unknown as Record<string, unknown>[], project ?? { name: 'Project' })
   } catch {
     res.status(500).json({ message: 'Server error' })
   }
@@ -58,6 +58,7 @@ router.get('/:projectId/reports/commercial', authenticate, requireProjectAccess,
     await logAudit({ userId: req.user!.id, projectId, entityType: 'CommercialDashboard', entityId: projectId, action: 'EXPORT', ipAddress: req.ip })
     generateCommercialDashboardPDF(res, {
       projectName: project?.name || 'Project',
+      project: project ?? undefined,
       openEWs,
       openRisks,
       openCEs,

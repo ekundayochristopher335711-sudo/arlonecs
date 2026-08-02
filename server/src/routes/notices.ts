@@ -93,7 +93,7 @@ router.get('/:projectId/notices/:id/pdf', authenticate, requireProjectAccess, as
     generateNoticePDF(
       res,
       { ...notice, issuedBy: issuer?.name ?? notice.issuedBy } as unknown as Record<string, unknown>,
-      project?.name || 'Project',
+      project ?? { name: 'Project' },
     )
   } catch {
     res.status(500).json({ message: 'Server error' })
