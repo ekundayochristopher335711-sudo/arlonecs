@@ -7,6 +7,7 @@ import {
   generateRiskRegisterPDF,
   generateCESummaryPDF,
   generateCommercialDashboardPDF,
+  generateDossierPDF,
 } from '../services/pdfService'
 
 const router = express.Router()
@@ -66,6 +67,45 @@ router.get('/:projectId/reports/commercial', authenticate, requireProjectAccess,
       riskExposure: riskExposureAgg._sum.costImpact ?? 0,
       overdueItems,
       cesByStatus: cesByStatus.map((r) => ({ status: r.status, count: r._count._all })),
+    })
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// The adjudication bundle: the whole contractual record in one document
+router.get('/:projectId/reports/dossier', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const projectId = req.params.projectId
+    const [project, earlyWarnings, risks, ces, notices, auditLogs, photoCount, drawingCount] = await Promise.all([
+      prisma.project.findUnique({ where: { id: projectId } }),
+      prisma.earlyWarning.findMany({ where: { projectId }, orderBy: { ewNumber: 'asc' } }),
+      prisma.riskItem.findMany({ where: { projectId }, orderBy: { riskId: 'asc' } }),
+      prisma.compensationEvent.findMany({ where: { projectId }, orderBy: { ceNumber: 'asc' } }),
+      prisma.notice.findMany({ where: { projectId }, orderBy: { noticeNumber: 'asc' } }),
+      prisma.auditLog.findMany({
+        where: { projectId },
+        include: { user: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 500,
+      }),
+      prisma.document.count({ where: { projectId, category: 'PHOTO' } }),
+      prisma.document.count({ where: { projectId, category: 'DRAWING' } }),
+    ])
+
+    await logAudit({ userId: req.user!.id, projectId, entityType: 'ContractDossier', entityId: projectId, action: 'EXPORT', ipAddress: req.ip })
+
+    generateDossierPDF(res, {
+      project: project ?? { name: 'Project' },
+      earlyWarnings: earlyWarnings as unknown as Record<string, unknown>[],
+      risks: risks as unknown as Record<string, unknown>[],
+      ces: ces as unknown as Record<string, unknown>[],
+      notices: notices as unknown as Record<string, unknown>[],
+      auditLogs: auditLogs.map((l) => ({
+        createdAt: l.createdAt, action: l.action, entityType: l.entityType, userName: l.user.name,
+      })),
+      photoCount,
+      drawingCount,
     })
   } catch {
     res.status(500).json({ message: 'Server error' })

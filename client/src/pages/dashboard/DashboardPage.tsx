@@ -102,6 +102,7 @@ export default function DashboardPage() {
               <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
               <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-card-lg z-20 py-1.5">
                 {[
+                  { icon: FileType, label: 'Contract Dossier — PDF', hint: 'Everything, for adjudication', fn: () => downloadReport(projectId!, 'dossier'), name: 'Contract dossier' },
                   { icon: FileType, label: 'Commercial Report — PDF', hint: 'Opens on any device', fn: () => downloadReport(projectId!, 'commercial'), name: 'Commercial report' },
                   { icon: FileType, label: 'CE Summary — CSV', hint: 'Opens anywhere, even phones', fn: () => downloadCSV(projectId!, 'ces'), name: 'CE summary (CSV)' },
                   { icon: FileType, label: 'Risk Register — CSV', hint: 'Opens anywhere, even phones', fn: () => downloadCSV(projectId!, 'risks'), name: 'Risk register (CSV)' },

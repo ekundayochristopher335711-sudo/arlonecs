@@ -352,6 +352,173 @@ export function generateCESummaryPDF(
   finalise(doc, meta, 'CE Summary')
 }
 
+// ── Adjudication dossier ─────────────────────────────────────────────────────
+// One document containing the whole contractual record: registers, the full
+// text of every notice, and the audit trail. This is the bundle you hand to an
+// adjudicator — the side with clean records wins.
+export interface DossierData {
+  project: ProjectMeta
+  earlyWarnings: Array<Record<string, unknown>>
+  risks: Array<Record<string, unknown>>
+  ces: Array<Record<string, unknown>>
+  notices: Array<Record<string, unknown>>
+  auditLogs: Array<{ createdAt: Date; action: string; entityType: string; userName: string }>
+  photoCount: number
+  drawingCount: number
+}
+
+export function generateDossierPDF(res: Response, data: DossierData) {
+  const meta = data.project
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true })
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, 'Contract-Dossier')}"`)
+  doc.pipe(res)
+
+  // Cover
+  const top = addLetterhead(doc, meta)
+  doc.y = addDocumentTitle(doc, 'Contract Dossier', `Complete project record  ·  ${new Date().toLocaleDateString('en-GB')}`, top)
+
+  sectionTitle(doc, 'Contents of this bundle')
+  fieldTable(doc, [
+    ['Early warnings', String(data.earlyWarnings.length)],
+    ['Risk register entries', String(data.risks.length)],
+    ['Compensation events', String(data.ces.length)],
+    ['Notices issued', String(data.notices.length)],
+    ['Photographs on file', String(data.photoCount)],
+    ['Drawings on file', String(data.drawingCount)],
+    ['Audit trail entries', String(data.auditLogs.length)],
+  ])
+  doc.moveDown(1)
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED)
+    .text('This bundle was produced automatically from the project record held in Aurum Project Controls. Every entry is timestamped and attributable. Photographs and drawings are held in the system and available on request.',
+      40, doc.y, { width: doc.page.width - 80, lineGap: 2 })
+
+  const newSection = (title: string) => {
+    doc.addPage()
+    const t = addLetterhead(doc, meta)
+    doc.y = addDocumentTitle(doc, title, undefined, t)
+  }
+
+  const guardSpace = (needed = 90) => {
+    if (doc.y > doc.page.height - needed) {
+      doc.addPage()
+      doc.y = addLetterhead(doc, meta)
+    }
+  }
+
+  // Early warnings
+  newSection('Early Warning Register')
+  if (data.earlyWarnings.length === 0) {
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No early warnings recorded.', 40, doc.y)
+  } else {
+    const widths = [65, 200, 80, 80, 90]
+    tableRow(doc, ['EW No.', 'Subject', 'Raised', 'Required by', 'Status'], widths, true)
+    data.earlyWarnings.forEach((ew) => {
+      tableRow(doc, [
+        String(ew['ewNumber'] ?? ''),
+        String(ew['title'] ?? '').substring(0, 60),
+        ew['dateRaised'] ? new Date(ew['dateRaised'] as string).toLocaleDateString('en-GB') : '',
+        ew['dateRequired'] ? new Date(ew['dateRequired'] as string).toLocaleDateString('en-GB') : 'N/A',
+        String(ew['status'] ?? ''),
+      ], widths)
+      guardSpace()
+    })
+  }
+
+  // Risks
+  newSection('Risk Register')
+  if (data.risks.length === 0) {
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No risks recorded.', 40, doc.y)
+  } else {
+    const widths = [55, 210, 40, 80, 60, 70]
+    tableRow(doc, ['Risk ID', 'Description', 'Prob', 'Cost (£)', 'Time (d)', 'Status'], widths, true)
+    data.risks.forEach((r) => {
+      const cost = r['costImpact']
+      tableRow(doc, [
+        String(r['riskId'] ?? ''),
+        String(r['description'] ?? '').substring(0, 62),
+        String(r['probability'] ?? ''),
+        typeof cost === 'number' ? cost.toLocaleString('en-GB') : 'N/A',
+        r['timeImpact'] != null ? String(r['timeImpact']) : 'N/A',
+        String(r['status'] ?? ''),
+      ], widths)
+      guardSpace()
+    })
+  }
+
+  // Compensation events
+  newSection('Compensation Events')
+  if (data.ces.length === 0) {
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No compensation events recorded.', 40, doc.y)
+  } else {
+    const widths = [55, 165, 55, 75, 75, 90]
+    tableRow(doc, ['CE No.', 'Title', 'Clause', 'Notified', 'Due', 'Status'], widths, true)
+    data.ces.forEach((ce) => {
+      tableRow(doc, [
+        String(ce['ceNumber'] ?? ''),
+        String(ce['title'] ?? '').substring(0, 48),
+        String(ce['clauseRef'] ?? 'N/A'),
+        ce['dateNotified'] ? new Date(ce['dateNotified'] as string).toLocaleDateString('en-GB') : '',
+        ce['dateResponseDue'] ? new Date(ce['dateResponseDue'] as string).toLocaleDateString('en-GB') : 'N/A',
+        String(ce['status'] ?? ''),
+      ], widths)
+      guardSpace()
+    })
+    const total = data.ces.reduce((s, ce) => s + (typeof ce['valuationAmount'] === 'number' ? ce['valuationAmount'] as number : 0), 0)
+    doc.moveDown(0.5)
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(NAVY)
+      .text(`Total valuation: £${total.toLocaleString('en-GB')}`, 40, doc.y)
+  }
+
+  // Notices — full text, since this is the evidence that matters most
+  newSection('Notices Issued')
+  if (data.notices.length === 0) {
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No notices issued.', 40, doc.y)
+  } else {
+    data.notices.forEach((n, i) => {
+      guardSpace(140)
+      if (i > 0) doc.moveDown(0.8)
+      doc.font('Helvetica-Bold').fontSize(10).fillColor(NAVY)
+        .text(`${n['noticeNumber']} — ${NOTICE_TYPE_LABELS[String(n['type'])] ?? 'Notice'}`, 40, doc.y, { width: doc.page.width - 80 })
+      doc.font('Helvetica').fontSize(8.5).fillColor(MUTED)
+        .text(`Issued ${n['dateIssued'] ? new Date(n['dateIssued'] as string).toLocaleDateString('en-GB') : ''} to ${n['issuedTo'] ?? ''}${n['dueDate'] ? `  ·  Response due ${new Date(n['dueDate'] as string).toLocaleDateString('en-GB')}` : ''}`,
+          40, doc.y + 2, { width: doc.page.width - 80 })
+      doc.moveDown(0.4)
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(NAVY).text(String(n['title'] ?? ''), 40, doc.y, { width: doc.page.width - 80 })
+      doc.moveDown(0.2)
+      doc.font('Helvetica').fontSize(9).fillColor('#334155')
+        .text(String(n['content'] ?? ''), 40, doc.y, { width: doc.page.width - 80, lineGap: 3, align: 'justify' })
+      doc.moveDown(0.4)
+      doc.moveTo(40, doc.y).lineTo(doc.page.width - 40, doc.y).lineWidth(0.5).strokeColor(RULE).stroke()
+      doc.lineWidth(1)
+      doc.moveDown(0.4)
+    })
+  }
+
+  // Audit trail
+  newSection('Audit Trail')
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED)
+    .text('Every recorded action on this project, most recent first.', 40, doc.y, { width: doc.page.width - 80 })
+  doc.moveDown(0.8)
+  if (data.auditLogs.length === 0) {
+    doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No audit entries.', 40, doc.y)
+  } else {
+    const widths = [110, 110, 130, 165]
+    tableRow(doc, ['Date & time', 'Action', 'Record type', 'By'], widths, true)
+    data.auditLogs.forEach((log) => {
+      tableRow(doc, [
+        new Date(log.createdAt).toLocaleString('en-GB'),
+        log.action.replace(/_/g, ' '),
+        log.entityType,
+        log.userName,
+      ], widths)
+      guardSpace()
+    })
+  }
+
+  finalise(doc, meta, 'Contract Dossier')
+}
+
 export function generateCommercialDashboardPDF(
   res: Response,
   data: {

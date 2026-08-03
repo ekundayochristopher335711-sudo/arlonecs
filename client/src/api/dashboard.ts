@@ -10,7 +10,7 @@ export const getAuditLog = (projectId: string, params?: { entityType?: string; p
     { params },
   ).then((r) => r.data)
 
-export const downloadReport = async (projectId: string, type: 'risk-register' | 'ce-summary' | 'commercial') => {
+export const downloadReport = async (projectId: string, type: 'risk-register' | 'ce-summary' | 'commercial' | 'dossier') => {
   const res = await api.get(`/projects/${projectId}/reports/${type}`, { responseType: 'blob' })
   const url = URL.createObjectURL(res.data)
   const a = document.createElement('a')
