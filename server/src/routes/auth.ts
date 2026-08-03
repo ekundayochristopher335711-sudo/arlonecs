@@ -154,6 +154,32 @@ router.get('/me', authenticate, async (req: AuthRequest, res): Promise<void> => 
   }
 })
 
+// Change password while signed in (the only route before this was "forgot")
+router.post('/change-password',
+  authenticate,
+  body('currentPassword').notEmpty(),
+  body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+  async (req: AuthRequest, res): Promise<void> => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
+
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+      if (!user) { res.status(404).json({ message: 'User not found' }); return }
+
+      const valid = await bcrypt.compare(req.body.currentPassword, user.password)
+      if (!valid) { res.status(400).json({ message: 'Your current password is not correct.' }); return }
+
+      const hashed = await bcrypt.hash(req.body.newPassword, 12)
+      await prisma.user.update({ where: { id: user.id }, data: { password: hashed } })
+      await logAudit({ userId: user.id, entityType: 'User', entityId: user.id, action: 'UPDATE', changes: { password: { old: '[redacted]', new: '[redacted]' } }, ipAddress: req.ip })
+      res.json({ message: 'Password changed successfully.' })
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
 // Each person controls their own email volume
 router.patch('/me/notifications', authenticate, async (req: AuthRequest, res): Promise<void> => {
   const { notifyContractEvents, notifyComments } = req.body

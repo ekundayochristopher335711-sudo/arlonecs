@@ -9,6 +9,9 @@ import { sendCommentNotification } from '../services/emailService'
 const TARGETS = ['PROJECT', 'EARLY_WARNING', 'RISK', 'COMPENSATION_EVENT', 'NOTICE'] as const
 type Target = typeof TARGETS[number]
 
+// Reacting with this is treated as a formal acknowledgement and audit-logged
+export const ACK_EMOJI = '✅'
+
 const router = express.Router()
 
 // Human-readable reference for the record being discussed, used in emails
@@ -67,6 +70,55 @@ router.get('/:projectId/comments', authenticate, requireProjectAccess, async (re
   }
 })
 
+// ── Unread counts per thread, for badges on record lists ─────────────────────
+router.get('/:projectId/comments/unread', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const [comments, views] = await Promise.all([
+      prisma.comment.findMany({
+        where: {
+          projectId: req.params.projectId,
+          authorId: { not: req.user!.id },
+          ...(canSeeRestricted(req) ? {} : { visibility: 'EVERYONE' as const }),
+        },
+        select: { targetType: true, targetId: true, createdAt: true },
+      }),
+      prisma.commentView.findMany({ where: { userId: req.user!.id, projectId: req.params.projectId } }),
+    ])
+
+    const key = (t: string, id: string) => `${t}:${id}`
+    const lastRead = new Map(views.map((v) => [key(v.targetType, v.targetId), v.lastReadAt]))
+    const counts = new Map<string, { targetType: string; targetId: string; count: number }>()
+    for (const c of comments) {
+      const seenAt = lastRead.get(key(c.targetType, c.targetId))
+      if (seenAt && c.createdAt <= seenAt) continue
+      const k = key(c.targetType, c.targetId)
+      const entry = counts.get(k)
+      if (entry) entry.count += 1
+      else counts.set(k, { targetType: c.targetType, targetId: c.targetId, count: 1 })
+    }
+    res.json([...counts.values()])
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// ── Mark a thread as read (called when the thread is opened) ─────────────────
+router.post('/:projectId/comments/read', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
+  const targetType = req.body.targetType as Target
+  if (!TARGETS.includes(targetType)) { res.status(400).json({ message: 'Invalid targetType' }); return }
+  const targetId = req.body.targetId || req.params.projectId
+  try {
+    await prisma.commentView.upsert({
+      where: { userId_targetType_targetId: { userId: req.user!.id, targetType, targetId } },
+      update: { lastReadAt: new Date() },
+      create: { userId: req.user!.id, projectId: req.params.projectId, targetType, targetId },
+    })
+    res.status(204).send()
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // ── Toggle a reaction (WhatsApp-style: tap once to add, again to remove) ─────
 router.post('/:projectId/comments/:id/reactions',
   authenticate,
@@ -98,6 +150,19 @@ router.post('/:projectId/comments/:id/reactions',
         await prisma.commentReaction.delete({ where: { id: existing.id } })
       } else {
         await prisma.commentReaction.create({ data: { commentId: comment.id, userId: req.user!.id, emoji } })
+        // An acknowledgement is contractually meaningful — record who
+        // acknowledged what and when, so it can be evidenced later.
+        if (emoji === ACK_EMOJI) {
+          await logAudit({
+            userId: req.user!.id,
+            projectId: req.params.projectId,
+            entityType: 'Comment',
+            entityId: comment.id,
+            action: 'STATUS_CHANGE',
+            changes: { acknowledged: { old: null, new: comment.body.slice(0, 120) } },
+            ipAddress: req.ip,
+          })
+        }
       }
 
       const reactions = await prisma.commentReaction.findMany({

@@ -76,6 +76,7 @@ model User {
   passwordResets PasswordReset[]
   comments       Comment[]
   reactions      CommentReaction[]
+  commentViews   CommentView[]
 }
 
 model PasswordReset {
@@ -280,6 +281,22 @@ model Comment {
   reactions CommentReaction[]
 
   @@index([projectId, targetType, targetId])
+}
+
+// Remembers where each person had read up to in a thread, so we can show
+// unread badges without storing a row per comment per user.
+model CommentView {
+  id         String        @id @default(cuid())
+  userId     String
+  projectId  String
+  targetType CommentTarget
+  targetId   String
+  lastReadAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId, projectId])
 }
 
 // One row per person per emoji, so we can show who reacted with what.

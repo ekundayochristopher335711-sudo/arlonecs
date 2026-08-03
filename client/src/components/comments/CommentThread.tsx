@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MessageSquare, Send, Trash2, Lock, SmilePlus } from 'lucide-react'
@@ -6,6 +6,7 @@ import {
   getComments, addComment, deleteComment, toggleReaction,
   CommentTarget, CommentVisibility, Comment, Reaction,
 } from '../../api/comments'
+import { markThreadRead } from '../../api/myActions'
 import { useAuthStore } from '../../store/authStore'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { useToast } from '../ui/Toast'
@@ -121,6 +122,17 @@ export default function CommentThread({ targetType, targetId, title = 'Discussio
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
     onError: () => toast.error('Could not delete the comment.'),
   })
+
+  // Opening the thread marks it read, clearing its unread badge
+  useEffect(() => {
+    if (!projectId || isLoading) return
+    markThreadRead(projectId, targetType, targetId)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['unread', projectId] })
+        queryClient.invalidateQueries({ queryKey: ['my-actions'] })
+      })
+      .catch(() => {})
+  }, [projectId, targetType, targetId, isLoading, comments.length, queryClient])
 
   const reactMutation = useMutation({
     mutationFn: ({ commentId, emoji }: { commentId: string; emoji: string }) => toggleReaction(projectId!, commentId, emoji),

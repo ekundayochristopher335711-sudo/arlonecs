@@ -80,6 +80,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Navigation */}
       <nav className="flex-1 py-3 overflow-y-auto scrollbar-thin">
         <SectionLabel>Main</SectionLabel>
+        <NavItem to="/home" icon={LayoutDashboard} label="My Actions" />
         <NavItem to="/projects" icon={FolderOpen} label="Projects" end />
         {user?.role === 'ADMIN' && <NavItem to="/admin/users" icon={Users} label="User Management" />}
         <NavItem to="/settings/notifications" icon={Bell} label="Notifications" />

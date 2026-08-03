@@ -19,6 +19,7 @@ import excelRoutes from './routes/excel'
 import invitationRoutes, { publicRouter as publicInvitationRoutes } from './routes/invitations'
 import commentRoutes from './routes/comments'
 import documentRoutes from './routes/documents'
+import myActionRoutes from './routes/myActions'
 import { sendOverdueNotifications } from './services/emailService'
 
 dotenv.config()
@@ -57,6 +58,7 @@ app.use('/api', rateLimit({
 // /api/projects/:projectId/documents/:docId/download endpoint, never statically.
 
 app.use('/api/auth', authRoutes)
+app.use('/api/me', myActionRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/projects', earlyWarningRoutes)
 app.use('/api/projects', riskRoutes)

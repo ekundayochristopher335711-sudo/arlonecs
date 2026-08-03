@@ -17,6 +17,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
 import CommentThread from '../../components/comments/CommentThread'
 import PhotoProofs from '../../components/documents/PhotoProofs'
+import { getUnreadCounts } from '../../api/myActions'
 import type { EarlyWarning, EWStatus } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO } from 'date-fns'
@@ -48,6 +49,14 @@ export default function EarlyWarningsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [deleting, setDeleting] = useState<EarlyWarning | null>(null)
   const [discussing, setDiscussing] = useState<EarlyWarning | null>(null)
+
+  const { data: unreadCounts = [] } = useQuery({
+    queryKey: ['unread', projectId],
+    queryFn: () => getUnreadCounts(projectId!),
+    enabled: !!projectId,
+  })
+  const unreadFor = (id: string) =>
+    unreadCounts.find((u) => u.targetType === 'EARLY_WARNING' && u.targetId === id)?.count ?? 0
 
   const { data: ews = [], isLoading } = useQuery({
     queryKey: ['early-warnings', projectId, statusFilter],
@@ -159,7 +168,14 @@ export default function EarlyWarningsPage() {
                   <td className="px-4 py-3 text-slate-500 text-xs">{ew.riskItems?.length ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setDiscussing(ew)} title="Comments" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><MessageSquare className="w-4 h-4" /></button>
+                      <button onClick={() => setDiscussing(ew)} title="Comments & photos" className="relative p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+                        <MessageSquare className="w-4 h-4" />
+                        {unreadFor(ew.id) > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center">
+                            {unreadFor(ew.id)}
+                          </span>
+                        )}
+                      </button>
                       <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber).then(() => toast.success('Notice PDF downloaded')).catch(() => toast.error('PDF download failed'))} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
                       {canEdit && (
                         <>

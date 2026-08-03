@@ -12,6 +12,7 @@ import DocumentsPage from './pages/documents/DocumentsPage'
 import DrawingsPage from './pages/drawings/DrawingsPage'
 import UsersPage from './pages/admin/UsersPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
+import MyActionsPage from './pages/home/MyActionsPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailPage from './pages/projects/ProjectDetailPage'
@@ -45,7 +46,8 @@ export default function App() {
             </PrivateRoute>
           }
         >
-          <Route index element={<Navigate to="/projects" replace />} />
+          <Route index element={<Navigate to="/home" replace />} />
+          <Route path="home" element={<MyActionsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="admin/users" element={<UsersPage />} />
           <Route path="settings/notifications" element={<NotificationsPage />} />
