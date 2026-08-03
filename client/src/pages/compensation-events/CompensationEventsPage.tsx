@@ -102,6 +102,7 @@ export default function CompensationEventsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<CompensationEvent | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState('')
   const [uploadCeId, setUploadCeId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<CompensationEvent | null>(null)
   const [discussing, setDiscussing] = useState<CompensationEvent | null>(null)
@@ -185,6 +186,16 @@ export default function CompensationEventsPage() {
     onError: () => toast.error('Upload failed. Files must be under 10MB.'),
   })
 
+  // Client-side search so it stays instant once a project has dozens of CEs
+  const q = search.trim().toLowerCase()
+  const visibleCEs = q
+    ? ces.filter((ce) =>
+        ce.ceNumber.toLowerCase().includes(q) ||
+        ce.title.toLowerCase().includes(q) ||
+        ce.description.toLowerCase().includes(q) ||
+        (ce.clauseRef ?? '').toLowerCase().includes(q))
+    : ces
+
   const totalValue = ces.reduce((sum, ce) => sum + (ce.valuationAmount ?? 0), 0)
 
   return (
@@ -196,7 +207,14 @@ export default function CompensationEventsPage() {
             {ces.length} event{ces.length !== 1 ? 's' : ''} · Total valuation: <span className="font-semibold text-gold-600">£{totalValue.toLocaleString('en-GB')}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search CEs…"
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 w-44 focus:outline-none focus:ring-2 focus:ring-gold-500"
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -231,7 +249,7 @@ export default function CompensationEventsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {ces.map((ce) => {
+              {visibleCEs.map((ce) => {
                 const isOverdue = ce.dateResponseDue && new Date(ce.dateResponseDue) < new Date() && ce.status !== 'CLOSED'
                 const daysLeft = ce.dateResponseDue ? differenceInDays(parseISO(ce.dateResponseDue), new Date()) : null
                 return (

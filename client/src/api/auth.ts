@@ -19,6 +19,9 @@ export const getMe = () =>
 export const updateNotificationPrefs = (data: { notifyContractEvents?: boolean; notifyComments?: boolean }) =>
   api.patch<User>('/auth/me/notifications', data).then((r) => r.data)
 
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  api.post<{ message: string }>('/auth/change-password', { currentPassword, newPassword }).then((r) => r.data)
+
 export const getUsers = () =>
   api.get<User[]>('/auth/users').then((r) => r.data)
 

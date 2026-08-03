@@ -47,6 +47,7 @@ export default function EarlyWarningsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<EarlyWarning | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<EarlyWarning | null>(null)
   const [discussing, setDiscussing] = useState<EarlyWarning | null>(null)
 
@@ -107,6 +108,16 @@ export default function EarlyWarningsPage() {
     onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
   })
 
+  // Client-side search keeps it instant on a busy register
+  const q = search.trim().toLowerCase()
+  const visibleEWs = q
+    ? ews.filter((ew) =>
+        ew.ewNumber.toLowerCase().includes(q) ||
+        ew.title.toLowerCase().includes(q) ||
+        ew.description.toLowerCase().includes(q) ||
+        (ew.assignedTo ?? '').toLowerCase().includes(q))
+    : ews
+
   return (
     <div className="max-w-6xl">
       <div className="flex items-center justify-between mb-6">
@@ -114,7 +125,14 @@ export default function EarlyWarningsPage() {
           <h1 className="text-2xl font-bold text-navy-900">Early Warnings</h1>
           <p className="text-sm text-slate-500 mt-0.5">{ews.length} item{ews.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search early warnings…"
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-gold-500"
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -153,7 +171,7 @@ export default function EarlyWarningsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {ews.map((ew) => (
+              {visibleEWs.map((ew) => (
                 <tr key={ew.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <span className="font-mono text-xs font-semibold text-navy-900 bg-navy-50 px-2 py-0.5 rounded">{ew.ewNumber}</span>

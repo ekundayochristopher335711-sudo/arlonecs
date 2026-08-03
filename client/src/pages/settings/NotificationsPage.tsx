@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, FileWarning, MessageSquare } from 'lucide-react'
-import { getMe, updateNotificationPrefs } from '../../api/auth'
+import { Bell, FileWarning, MessageSquare, KeyRound } from 'lucide-react'
+import { getMe, updateNotificationPrefs, changePassword } from '../../api/auth'
 import { useToast } from '../../components/ui/Toast'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -15,6 +18,58 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
     >
       <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
     </button>
+  )
+}
+
+function ChangePassword() {
+  const toast = useToast()
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState('')
+
+  const mutation = useMutation({
+    mutationFn: () => changePassword(current, next),
+    onSuccess: () => {
+      toast.success('Password changed')
+      setCurrent(''); setNext(''); setConfirm(''); setError('')
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg || 'Could not change your password.')
+    },
+  })
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (next.length < 8) { setError('New password must be at least 8 characters.'); return }
+    if (next !== confirm) { setError('The new passwords do not match.'); return }
+    mutation.mutate()
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 mt-6">
+      <div className="flex items-start gap-4">
+        <div className="w-9 h-9 rounded-lg bg-navy-50 flex items-center justify-center shrink-0">
+          <KeyRound className="w-4 h-4 text-navy-700" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-slate-800">Change password</p>
+          <p className="text-xs text-slate-500 mt-1">Choose something at least 8 characters long.</p>
+
+          <form onSubmit={submit} className="mt-4 space-y-3 max-w-sm">
+            <Input label="Current password" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+            <Input label="New password" type="password" value={next} onChange={(e) => setNext(e.target.value)} />
+            <Input label="Confirm new password" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+            <Button type="submit" size="sm" loading={mutation.isPending} disabled={!current || !next || !confirm}>
+              Update password
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -55,8 +110,8 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-navy-900">Notification Settings</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Choose what Aurum emails you. This applies to all your projects.</p>
+        <h1 className="text-2xl font-bold text-navy-900">Settings</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Choose what Aurum emails you, and manage your password.</p>
       </div>
 
       {isLoading ? (
@@ -90,6 +145,8 @@ export default function NotificationsPage() {
           Turning those off means you will not be warned before a contractual deadline passes.
         </p>
       </div>
+
+      <ChangePassword />
     </div>
   )
 }
