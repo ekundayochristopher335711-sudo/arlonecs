@@ -9,6 +9,7 @@ import { requireProjectAccess, requireProjectRole } from '../middleware/roleChec
 import { logAudit, diffObjects } from '../services/auditService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
 import { sendCEStatusChangeNotification, notifyContractEvent } from '../services/emailService'
+import { isValidTransition, replyDueFrom, quotationDueFrom, quoteReplyDueFrom } from '../services/necRules'
 
 // Files are stored IN the database (bytea) so they survive serverless deploys
 // and are backed up with everything else. Legacy rows created before this
@@ -20,18 +21,6 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const docSelect = { id: true, ceId: true, category: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true }
 
 const router = express.Router()
-
-// NEC workflow: forward-only. A CE can move to any later stage but never backwards.
-const CE_WORKFLOW = ['NOTIFIED', 'QUOTED', 'ASSESSED', 'IMPLEMENTED', 'CLOSED']
-const isValidTransition = (from: string, to: string): boolean =>
-  CE_WORKFLOW.indexOf(to) >= CE_WORKFLOW.indexOf(from)
-
-// NEC4 clause clocks (in days)
-const REPLY_DAYS = 7            // cl. 61.4 — PM replies to a CE notification within 1 week
-const QUOTATION_DAYS = 21       // cl. 62.3 — contractor submits quotation within 3 weeks
-const QUOTE_REPLY_DAYS = 14     // cl. 62.3 — PM replies to a quotation within 2 weeks
-
-const addDays = (d: Date, days: number) => new Date(d.getTime() + days * 24 * 60 * 60 * 1000)
 
 router.get('/:projectId/compensation-events', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   try {
@@ -86,8 +75,8 @@ router.post('/:projectId/compensation-events',
       const notified = new Date(dateNotified)
       // NEC deadline clocks: default the PM reply period (61.4) and the
       // quotation deadline (62.3) when not explicitly provided
-      const responseDue = dateResponseDue ? new Date(dateResponseDue) : addDays(notified, REPLY_DAYS)
-      const quotationDue = addDays(notified, QUOTATION_DAYS)
+      const responseDue = dateResponseDue ? new Date(dateResponseDue) : replyDueFrom(notified)
+      const quotationDue = quotationDueFrom(notified)
 
       const ce = await createWithRetry(async () => {
         const ceNumber = await nextNumber('compensationEvent', req.params.projectId, 'CE')
@@ -165,7 +154,7 @@ router.put('/:projectId/compensation-events/:id',
       // cl. 62.3: once the quotation is submitted (status → QUOTED), the PM has
       // 2 weeks to reply — restart the response clock automatically
       if (updateData.status === 'QUOTED' && existing.status !== 'QUOTED' && updateData.dateResponseDue === undefined) {
-        updateData.dateResponseDue = addDays(new Date(), QUOTE_REPLY_DAYS)
+        updateData.dateResponseDue = quoteReplyDueFrom(new Date())
       }
       if (updateData.valuationAmount !== undefined) {
         updateData.valuationAmount = updateData.valuationAmount === null || updateData.valuationAmount === '' ? null : Number(updateData.valuationAmount)
