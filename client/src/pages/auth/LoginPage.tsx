@@ -29,7 +29,7 @@ export default function LoginPage() {
       setServerError('')
       const res = await login(data.email, data.password)
       setAuth(res.user, res.token)
-      navigate('/projects')
+      navigate('/home')
     } catch (e: unknown) {
       const resp = (e as { response?: { status?: number; data?: { message?: string } } })?.response
       // 403 = right password but account pending approval / deactivated — explain why

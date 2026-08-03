@@ -13,6 +13,7 @@ import DrawingsPage from './pages/drawings/DrawingsPage'
 import UsersPage from './pages/admin/UsersPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
 import MyActionsPage from './pages/home/MyActionsPage'
+import LandingPage from './pages/marketing/LandingPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailPage from './pages/projects/ProjectDetailPage'
@@ -38,15 +39,18 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+
+        {/* Public marketing site */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* The application itself — layout route, children resolve from root */}
         <Route
-          path="/"
           element={
             <PrivateRoute>
               <Layout />
             </PrivateRoute>
           }
         >
-          <Route index element={<Navigate to="/home" replace />} />
           <Route path="home" element={<MyActionsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="admin/users" element={<UsersPage />} />
@@ -62,6 +66,9 @@ export default function App() {
           <Route path="projects/:projectId/dashboard" element={<DashboardPage />} />
           <Route path="projects/:projectId/ce-whatif" element={<CEWhatIfPage />} />
         </Route>
+
+        {/* Unknown address — send people somewhere useful */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
     </BrowserRouter>
