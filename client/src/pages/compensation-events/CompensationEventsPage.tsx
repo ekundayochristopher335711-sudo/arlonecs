@@ -200,7 +200,7 @@ export default function CompensationEventsPage() {
 
   return (
     <div className="max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy-900">Compensation Events</h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -348,6 +348,7 @@ export default function CompensationEventsPage() {
       </Modal>
 
       <ConfirmDialog
+        requirePassword
         open={!!deleting}
         title={`Delete ${deleting?.ceNumber}?`}
         message={`"${deleting?.title}" and its documents will be permanently removed. This action is recorded in the audit trail.`}

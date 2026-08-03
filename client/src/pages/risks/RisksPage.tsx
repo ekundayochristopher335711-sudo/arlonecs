@@ -146,7 +146,7 @@ export default function RisksPage() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy-900">Risk Register</h1>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -226,6 +226,7 @@ export default function RisksPage() {
       )}
 
       <ConfirmDialog
+        requirePassword
         open={!!deleting}
         title={`Delete ${deleting?.riskId}?`}
         message={`"${deleting?.description?.slice(0, 80)}" will be permanently removed from the register. This action is recorded in the audit trail.`}

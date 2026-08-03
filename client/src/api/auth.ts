@@ -13,6 +13,9 @@ export const forgotPassword = (email: string) =>
 export const resetPassword = (token: string, password: string) =>
   api.post<{ message: string }>('/auth/reset-password', { token, password }).then((r) => r.data)
 
+export const verifyPassword = (password: string) =>
+  api.post<{ ok: boolean }>('/auth/verify-password', { password }).then((r) => r.data)
+
 export const getMe = () =>
   api.get<User>('/auth/me').then((r) => r.data)
 

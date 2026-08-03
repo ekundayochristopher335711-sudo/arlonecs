@@ -24,8 +24,10 @@ export default function Layout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="p-4 lg:p-6">
+        {/* overflow-x-hidden stops any single wide element dragging the whole
+            page sideways on a phone; tables scroll inside their own container */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+          <div className="p-4 lg:p-6 max-w-full">
             <Outlet />
           </div>
         </main>

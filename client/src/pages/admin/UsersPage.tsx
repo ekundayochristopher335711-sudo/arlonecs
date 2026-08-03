@@ -130,6 +130,7 @@ export default function UsersPage() {
       )}
 
       <ConfirmDialog
+        requirePassword
         open={!!deactivating}
         title={`Deactivate ${deactivating?.name}?`}
         message={`${deactivating?.email} will no longer be able to sign in. Their records and audit history are kept. You can reactivate them at any time.`}

@@ -120,7 +120,7 @@ export default function EarlyWarningsPage() {
 
   return (
     <div className="max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy-900">Early Warnings</h1>
           <p className="text-sm text-slate-500 mt-0.5">{ews.length} item{ews.length !== 1 ? 's' : ''}</p>
@@ -222,6 +222,7 @@ export default function EarlyWarningsPage() {
       </Modal>
 
       <ConfirmDialog
+        requirePassword
         open={!!deleting}
         title={`Delete ${deleting?.ewNumber}?`}
         message={`"${deleting?.title}" will be permanently removed. This action is recorded in the audit trail.`}

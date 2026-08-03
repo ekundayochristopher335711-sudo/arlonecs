@@ -142,6 +142,27 @@ router.post('/reset-password',
   },
 )
 
+// Re-authenticate for a destructive action (delete, remove member, complete).
+// Rate limited so it can't be used to brute-force the signed-in user.
+router.post('/verify-password',
+  authenticate,
+  authLimiter,
+  body('password').notEmpty(),
+  async (req: AuthRequest, res): Promise<void> => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) { res.status(400).json({ message: 'Password required' }); return }
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+      if (!user) { res.status(401).json({ message: 'Incorrect password' }); return }
+      const valid = await bcrypt.compare(req.body.password, user.password)
+      if (!valid) { res.status(401).json({ message: 'Incorrect password' }); return }
+      res.json({ ok: true })
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
+
 router.get('/me', authenticate, async (req: AuthRequest, res): Promise<void> => {
   try {
     const user = await prisma.user.findUnique({

@@ -210,15 +210,15 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
-            <span className="cursor-pointer hover:text-gold-600 transition-colors" onClick={() => navigate('/projects')}>Projects</span>
-            <span>/</span>
-            <span className="text-slate-700 font-medium">{project.name}</span>
+      {/* Header — stacks on phones so the action buttons never widen the page */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2 min-w-0">
+            <span className="cursor-pointer hover:text-gold-600 transition-colors shrink-0" onClick={() => navigate('/projects')}>Projects</span>
+            <span className="shrink-0">/</span>
+            <span className="text-slate-700 font-medium truncate">{project.name}</span>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">{project.name}</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight break-words">{project.name}</h1>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${project.contractType === 'NEC4' ? 'bg-gold-100 text-gold-700' : 'bg-blue-100 text-blue-700'}`}>
               {project.contractType}
@@ -227,7 +227,7 @@ export default function ProjectDetailPage() {
             {project.contractValue && <span className="text-sm text-slate-500">Value: <span className="font-medium text-slate-700">£{project.contractValue.toLocaleString('en-GB')}</span></span>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {canEdit && (
             <Button variant="outline" icon={<Pencil className="w-4 h-4" />} onClick={openEdit}>
               Edit Details
@@ -362,6 +362,7 @@ export default function ProjectDetailPage() {
       <CommentThread targetType="PROJECT" title="Project Discussion" />
 
       <ConfirmDialog
+        requirePassword
         open={completeOpen}
         title={`Complete ${project.name}?`}
         message={
