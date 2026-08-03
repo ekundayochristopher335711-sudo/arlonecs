@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, FileDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileDown, MessageSquare } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,6 +15,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
+import CommentThread from '../../components/comments/CommentThread'
 import type { EarlyWarning, EWStatus } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO } from 'date-fns'
@@ -45,6 +46,7 @@ export default function EarlyWarningsPage() {
   const [editing, setEditing] = useState<EarlyWarning | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [deleting, setDeleting] = useState<EarlyWarning | null>(null)
+  const [discussing, setDiscussing] = useState<EarlyWarning | null>(null)
 
   const { data: ews = [], isLoading } = useQuery({
     queryKey: ['early-warnings', projectId, statusFilter],
@@ -156,7 +158,8 @@ export default function EarlyWarningsPage() {
                   <td className="px-4 py-3 text-slate-500 text-xs">{ew.riskItems?.length ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber).then(() => toast.success(`${ew.ewNumber}.pdf downloaded`)).catch(() => toast.error('PDF download failed'))} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
+                      <button onClick={() => setDiscussing(ew)} title="Comments" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><MessageSquare className="w-4 h-4" /></button>
+                      <button onClick={() => downloadEarlyWarningPDF(projectId!, ew.id, ew.ewNumber).then(() => toast.success('Notice PDF downloaded')).catch(() => toast.error('PDF download failed'))} title="Download formal notice PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><FileDown className="w-4 h-4" /></button>
                       {canEdit && (
                         <>
                           <button onClick={() => openEdit(ew)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -171,6 +174,10 @@ export default function EarlyWarningsPage() {
           </table>
         </div>
       )}
+
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ewNumber} — Discussion` : 'Discussion'} size="lg">
+        {discussing && <CommentThread targetType="EARLY_WARNING" targetId={discussing.id} compact />}
+      </Modal>
 
       <ConfirmDialog
         open={!!deleting}

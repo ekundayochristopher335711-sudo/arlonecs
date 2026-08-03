@@ -9,6 +9,7 @@ import { getProject, addProjectMember, removeProjectMember, completeProject, reo
 import { getDashboard } from '../../api/dashboard'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import CommentThread from '../../components/comments/CommentThread'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { useToast } from '../../components/ui/Toast'
 import { useAuthStore } from '../../store/authStore'
@@ -316,6 +317,9 @@ export default function ProjectDetailPage() {
           </>
         )}
       </div>
+
+      {/* Project-wide discussion between client and contractor */}
+      <CommentThread targetType="PROJECT" title="Project Discussion" />
 
       <ConfirmDialog
         open={completeOpen}

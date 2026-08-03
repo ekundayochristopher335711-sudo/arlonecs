@@ -157,6 +157,42 @@ export async function sendInvitationEmail(
   })
 }
 
+// Activity notification: someone commented on the project or a record in it
+export async function sendCommentNotification(opts: {
+  recipients: string[]
+  projectName: string
+  on: string
+  authorName: string
+  body: string
+}) {
+  if (!emailConfigured() || opts.recipients.length === 0) return
+
+  const excerpt = opts.body.length > 600 ? `${opts.body.slice(0, 600)}…` : opts.body
+  const escaped = excerpt
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
+
+  await transporter.sendMail({
+    from: FROM(),
+    to: opts.recipients.join(', '),
+    subject: `New comment on ${opts.on} — ${opts.projectName}`,
+    html: shell(`
+      <h3 style="color:#080F1C;font-size:18px;margin:0 0 4px">New comment</h3>
+      <p style="color:#6B7280;margin:0 0 16px;font-size:13px">
+        <strong>${opts.authorName}</strong> commented on <strong>${opts.on}</strong> in ${opts.projectName}.
+      </p>
+      <div style="border-left:3px solid #B45309;background:#F8FAFC;padding:12px 16px;color:#334155;font-size:14px;line-height:1.5">
+        ${escaped}
+      </div>
+      <p style="margin-top:20px">
+        <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#B45309" style="border-radius:8px">
+          <a href="${process.env.CLIENT_URL}" target="_blank" style="display:inline-block;padding:11px 26px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Open Aurum</a>
+        </td></tr></table>
+      </p>
+    `),
+  })
+}
+
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
   if (!emailConfigured()) return
 

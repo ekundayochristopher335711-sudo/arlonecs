@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Upload, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Upload, ChevronRight, MessageSquare } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,6 +15,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
+import CommentThread from '../../components/comments/CommentThread'
 import type { CompensationEvent } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -101,6 +102,7 @@ export default function CompensationEventsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [uploadCeId, setUploadCeId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<CompensationEvent | null>(null)
+  const [discussing, setDiscussing] = useState<CompensationEvent | null>(null)
 
   const { data: ces = [], isLoading } = useQuery({
     queryKey: ['ces', projectId, statusFilter],
@@ -250,6 +252,7 @@ export default function CompensationEventsPage() {
                     <td className="px-4 py-3"><StatusBadge status={ce.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        <button onClick={() => setDiscussing(ce)} title="Comments" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><MessageSquare className="w-4 h-4" /></button>
                         {canEdit && <button onClick={() => { setUploadCeId(ce.id) }} title="Upload document" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Upload className="w-4 h-4" /></button>}
                         {canEdit && <button onClick={() => openEdit(ce)} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><Pencil className="w-4 h-4" /></button>}
                         {canEdit && <button onClick={() => setDeleting(ce)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>}
@@ -296,6 +299,10 @@ export default function CompensationEventsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ceNumber} — Discussion` : 'Discussion'} size="lg">
+        {discussing && <CommentThread targetType="COMPENSATION_EVENT" targetId={discussing.id} compact />}
       </Modal>
 
       <ConfirmDialog

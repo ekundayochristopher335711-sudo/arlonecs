@@ -69,6 +69,7 @@ model User {
   projectMembers ProjectMember[]
   auditLogs      AuditLog[]
   passwordResets PasswordReset[]
+  comments       Comment[]
 }
 
 model PasswordReset {
@@ -103,6 +104,7 @@ model Project {
   compensationEvents CompensationEvent[]
   notices            Notice[]
   auditLogs          AuditLog[]
+  comments           Comment[]
 }
 
 model ProjectMember {
@@ -218,6 +220,32 @@ model Document {
   createdAt  DateTime @default(now())
 
   ce CompensationEvent @relation(fields: [ceId], references: [id], onDelete: Cascade)
+}
+
+enum CommentTarget {
+  PROJECT
+  EARLY_WARNING
+  RISK
+  COMPENSATION_EVENT
+  NOTICE
+}
+
+// Discussion thread attached to a project or to any record within it.
+// Kept polymorphic so one component serves every module.
+model Comment {
+  id         String        @id @default(cuid())
+  projectId  String
+  targetType CommentTarget
+  targetId   String
+  body       String
+  authorId   String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@index([projectId, targetType, targetId])
 }
 
 model Invitation {

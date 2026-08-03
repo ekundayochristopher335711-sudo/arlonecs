@@ -17,6 +17,7 @@ import dashboardRoutes from './routes/dashboard'
 import reportRoutes from './routes/reports'
 import excelRoutes from './routes/excel'
 import invitationRoutes, { publicRouter as publicInvitationRoutes } from './routes/invitations'
+import commentRoutes from './routes/comments'
 import { sendOverdueNotifications } from './services/emailService'
 
 dotenv.config()
@@ -64,6 +65,7 @@ app.use('/api/projects', dashboardRoutes)
 app.use('/api/projects', reportRoutes)
 app.use('/api/projects', excelRoutes)
 app.use('/api/projects', invitationRoutes)
+app.use('/api/projects', commentRoutes)
 app.use('/api/invitations', publicInvitationRoutes)
 
 app.get('/api/health', (_req, res) => {
