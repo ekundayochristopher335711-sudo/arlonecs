@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail, Copy, Archive, ArchiveRestore } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, FileText, Bell, ClipboardList, LayoutDashboard, UserPlus, GitBranch, Trash2, Mail, Copy, Archive, ArchiveRestore, Pencil } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { getProject, addProjectMember, removeProjectMember, completeProject, reopenProject } from '../../api/projects'
+import { getProject, addProjectMember, removeProjectMember, completeProject, reopenProject, updateProject } from '../../api/projects'
+import Input from '../../components/ui/Input'
+import Select from '../../components/ui/Select'
+import Textarea from '../../components/ui/Textarea'
 import { getDashboard } from '../../api/dashboard'
 import { sendInvitation, getInvitations, revokeInvitation } from '../../api/invitations'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
@@ -47,6 +50,9 @@ export default function ProjectDetailPage() {
   const me = useAuthStore((s) => s.user)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [completeOpen, setCompleteOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  // These details appear on every exported document's letterhead
+  const [form, setForm] = useState({ name: '', clientName: '', contractorName: '', contractType: 'NEC4', description: '' })
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [inviteLink, setInviteLink] = useState('')
   const [inviteToken, setInviteToken] = useState('')
@@ -146,6 +152,35 @@ export default function ProjectDetailPage() {
     onError: () => toast.error('Could not reopen the project.'),
   })
 
+  const editMutation = useMutation({
+    mutationFn: () => updateProject(projectId!, {
+      name: form.name,
+      clientName: form.clientName || undefined,
+      contractorName: form.contractorName || undefined,
+      contractType: form.contractType as 'NEC3' | 'NEC4',
+      description: form.description || undefined,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast.success('Project details updated — exported documents will use them')
+      setEditOpen(false)
+    },
+    onError: () => toast.error('Could not save the project details.'),
+  })
+
+  const openEdit = () => {
+    if (!project) return
+    setForm({
+      name: project.name,
+      clientName: project.clientName ?? '',
+      contractorName: project.contractorName ?? '',
+      contractType: project.contractType,
+      description: project.description ?? '',
+    })
+    setEditOpen(true)
+  }
+
   const isProjectAdmin = myProjectRole === 'ADMIN'
   // Open-item counts for the completion warning
   const { data: dash } = useQuery({
@@ -193,6 +228,11 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button variant="outline" icon={<Pencil className="w-4 h-4" />} onClick={openEdit}>
+              Edit Details
+            </Button>
+          )}
           {canInvite && (
             <Button icon={<UserPlus className="w-4 h-4" />} onClick={() => { setInviteOpen(true); setInviteSuccess(''); setInviteLink(''); setInviteToken(''); }}>
               Invite Member
@@ -334,6 +374,32 @@ export default function ProjectDetailPage() {
         onConfirm={() => completeMutation.mutate()}
         onCancel={() => setCompleteOpen(false)}
       />
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Project Details" size="lg">
+        <div className="space-y-4">
+          <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+            These details appear on the letterhead of every notice, report and export for this project.
+          </p>
+          <Input label="Project Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Client Name" placeholder="e.g. NHS" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
+            <Input label="Contractor Name" placeholder="e.g. Robertson Group" value={form.contractorName} onChange={(e) => setForm({ ...form, contractorName: e.target.value })} />
+          </div>
+          <Select
+            label="Contract Type"
+            options={[{ value: 'NEC4', label: 'NEC4' }, { value: 'NEC3', label: 'NEC3' }]}
+            value={form.contractType}
+            onChange={(e) => setForm({ ...form, contractType: e.target.value })}
+          />
+          <Textarea label="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button loading={editMutation.isPending} disabled={!form.name.trim()} onClick={() => editMutation.mutate()}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Invite modal */}
       <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite Team Member" size="sm">
