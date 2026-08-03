@@ -80,8 +80,14 @@ app.get('/api/health/db', async (_req, res) => {
   const prisma = (await import('./config/database')).default
   try {
     await prisma.$queryRaw`SELECT 1`
-    const users = await prisma.user.count()
-    res.json({ db: 'ok', seededUsers: users })
+    // Touch every table added by a migration so a half-applied schema shows up
+    // here rather than as a mysterious 500 the first time a user clicks around.
+    const [users, comments, drawings] = await Promise.all([
+      prisma.user.count(),
+      prisma.comment.count(),
+      prisma.document.count({ where: { category: 'DRAWING' } }),
+    ])
+    res.json({ db: 'ok', schema: 'ok', seededUsers: users, comments, drawings })
   } catch (e) {
     const err = e as { code?: string; message?: string }
     const code = err.code ?? 'UNKNOWN'
