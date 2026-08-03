@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage'
 import DocumentsPage from './pages/documents/DocumentsPage'
+import DrawingsPage from './pages/drawings/DrawingsPage'
 import UsersPage from './pages/admin/UsersPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="projects/:projectId/compensation-events" element={<CompensationEventsPage />} />
           <Route path="projects/:projectId/notices" element={<NoticesPage />} />
           <Route path="projects/:projectId/documents" element={<DocumentsPage />} />
+          <Route path="projects/:projectId/drawings" element={<DrawingsPage />} />
           <Route path="projects/:projectId/audit" element={<AuditLogPage />} />
           <Route path="projects/:projectId/dashboard" element={<DashboardPage />} />
           <Route path="projects/:projectId/ce-whatif" element={<CEWhatIfPage />} />

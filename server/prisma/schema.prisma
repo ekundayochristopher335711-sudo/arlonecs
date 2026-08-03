@@ -105,6 +105,7 @@ model Project {
   notices            Notice[]
   auditLogs          AuditLog[]
   comments           Comment[]
+  documents          Document[]
 }
 
 model ProjectMember {
@@ -136,6 +137,7 @@ model EarlyWarning {
 
   project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   riskItems RiskItem[]
+  documents Document[]
 
   @@unique([projectId, ewNumber])
 }
@@ -206,9 +208,22 @@ model Notice {
   @@unique([projectId, noticeNumber])
 }
 
+enum DocumentCategory {
+  GENERAL
+  PHOTO
+  DRAWING
+}
+
 model Document {
-  id         String   @id @default(cuid())
-  ceId       String
+  id         String           @id @default(cuid())
+  projectId  String
+  // A document may hang off a CE, an Early Warning, or the project itself
+  // (drawings and general project files).
+  ceId       String?
+  ewId       String?
+  category   DocumentCategory @default(GENERAL)
+  // Drawing number / reference or a caption for a photo
+  reference  String?
   name       String
   path       String
   size       Int
@@ -217,9 +232,13 @@ model Document {
   // File content stored in the database so uploads survive serverless deploys.
   // Legacy rows (pre-migration) have null here and fall back to disk.
   data       Bytes?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime         @default(now())
 
-  ce CompensationEvent @relation(fields: [ceId], references: [id], onDelete: Cascade)
+  project Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ce      CompensationEvent? @relation(fields: [ceId], references: [id], onDelete: Cascade)
+  ew      EarlyWarning?      @relation(fields: [ewId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, category])
 }
 
 enum CommentTarget {

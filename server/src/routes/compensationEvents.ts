@@ -17,7 +17,7 @@ const UPLOAD_DIR = path.join(__dirname, '../../uploads')
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
 // List/detail responses must never drag file bytes along — always select
-const docSelect = { id: true, ceId: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true }
+const docSelect = { id: true, ceId: true, category: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true }
 
 const router = express.Router()
 
@@ -196,9 +196,13 @@ router.post('/:projectId/compensation-events/:id/documents',
       })
       if (!ce) { res.status(404).json({ message: 'CE not found' }); return }
 
+      // Photos are recognised so they surface in the CE photo gallery
+      const isImage = req.file.mimetype.startsWith('image/')
       const doc = await prisma.document.create({
         data: {
+          projectId: req.params.projectId,
           ceId: req.params.id,
+          category: isImage ? 'PHOTO' : 'GENERAL',
           name: req.file.originalname,
           path: '',
           size: req.file.size,
@@ -216,48 +220,7 @@ router.post('/:projectId/compensation-events/:id/documents',
   },
 )
 
-// Authenticated document download — files are NOT publicly served
-router.get('/:projectId/documents/:docId/download', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    const doc = await prisma.document.findFirst({
-      where: { id: req.params.docId, ce: { projectId: req.params.projectId } },
-    })
-    if (!doc) { res.status(404).json({ message: 'Document not found' }); return }
-
-    await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Document', entityId: doc.id, action: 'EXPORT', ipAddress: req.ip })
-    res.setHeader('Content-Type', doc.mimeType)
-    res.setHeader('Content-Disposition', `attachment; filename="${doc.name.replace(/"/g, '')}"`)
-
-    if (doc.data && doc.data.length > 0) {
-      res.send(Buffer.from(doc.data))
-      return
-    }
-    // Legacy row from before database-backed storage — try the old disk path
-    const filePath = doc.path ? path.join(UPLOAD_DIR, path.basename(doc.path)) : ''
-    if (!filePath || !fs.existsSync(filePath)) { res.status(404).json({ message: 'File missing from storage' }); return }
-    fs.createReadStream(filePath).pipe(res)
-  } catch {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// Project-wide document register
-router.get('/:projectId/documents', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
-  try {
-    const docs = await prisma.document.findMany({
-      where: { ce: { projectId: req.params.projectId } },
-      select: { ...docSelect, ce: { select: { id: true, ceNumber: true, title: true } } },
-      orderBy: { createdAt: 'desc' },
-    })
-    // Resolve uploader names in one query
-    const userIds = [...new Set(docs.map((d) => d.uploadedBy))]
-    const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } })
-    const nameMap = new Map(users.map((u) => [u.id, u.name]))
-    res.json(docs.map((d) => ({ ...d, uploadedByName: nameMap.get(d.uploadedBy) ?? 'Unknown' })))
-  } catch {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
+// NOTE: document listing, upload, download and delete now live in routes/documents.ts
 
 // Deleting contractual records is restricted to project ADMINs and is always audited
 router.delete('/:projectId/compensation-events/:id', authenticate, requireProjectAccess, requireProjectRole('ADMIN'), async (req: AuthRequest, res): Promise<void> => {

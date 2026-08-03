@@ -16,6 +16,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
 import CommentThread from '../../components/comments/CommentThread'
+import PhotoProofs from '../../components/documents/PhotoProofs'
 import type { EarlyWarning, EWStatus } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO } from 'date-fns'
@@ -175,8 +176,15 @@ export default function EarlyWarningsPage() {
         </div>
       )}
 
-      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ewNumber} — Discussion` : 'Discussion'} size="lg">
-        {discussing && <CommentThread targetType="EARLY_WARNING" targetId={discussing.id} compact />}
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ewNumber} — ${discussing.title}` : ''} size="lg">
+        {discussing && (
+          <div className="space-y-6">
+            <PhotoProofs ewId={discussing.id} />
+            <div className="border-t border-slate-100 pt-5">
+              <CommentThread targetType="EARLY_WARNING" targetId={discussing.id} compact />
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

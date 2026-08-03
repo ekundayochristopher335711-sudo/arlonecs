@@ -16,6 +16,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../components/ui/Toast'
 import CommentThread from '../../components/comments/CommentThread'
+import PhotoProofs from '../../components/documents/PhotoProofs'
 import type { CompensationEvent } from '../../types'
 import { useProjectRole } from '../../hooks/useProjectRole'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -301,8 +302,15 @@ export default function CompensationEventsPage() {
         </form>
       </Modal>
 
-      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ceNumber} — Discussion` : 'Discussion'} size="lg">
-        {discussing && <CommentThread targetType="COMPENSATION_EVENT" targetId={discussing.id} compact />}
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ceNumber} — ${discussing.title}` : ''} size="lg">
+        {discussing && (
+          <div className="space-y-6">
+            <PhotoProofs ceId={discussing.id} />
+            <div className="border-t border-slate-100 pt-5">
+              <CommentThread targetType="COMPENSATION_EVENT" targetId={discussing.id} compact />
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

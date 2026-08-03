@@ -69,13 +69,25 @@ export default function DocumentsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => navigate(`/projects/${projectId}/compensation-events`)}
-                      className="font-mono text-xs font-semibold text-navy-900 bg-navy-50 px-2 py-0.5 rounded hover:bg-navy-100 transition-colors"
-                      title={doc.ce.title}
-                    >
-                      {doc.ce.ceNumber}
-                    </button>
+                    {doc.ce ? (
+                      <button
+                        onClick={() => navigate(`/projects/${projectId}/compensation-events`)}
+                        className="font-mono text-xs font-semibold text-navy-900 bg-navy-50 px-2 py-0.5 rounded hover:bg-navy-100 transition-colors"
+                        title={doc.ce.title}
+                      >
+                        {doc.ce.ceNumber}
+                      </button>
+                    ) : doc.ew ? (
+                      <button
+                        onClick={() => navigate(`/projects/${projectId}/early-warnings`)}
+                        className="font-mono text-xs font-semibold text-navy-900 bg-navy-50 px-2 py-0.5 rounded hover:bg-navy-100 transition-colors"
+                        title={doc.ew.title}
+                      >
+                        {doc.ew.ewNumber}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">{doc.category === 'DRAWING' ? (doc.reference || 'Drawing') : 'Project'}</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-600">{doc.uploadedByName}</td>
                   <td className="px-4 py-3 text-xs text-slate-600">{format(parseISO(doc.createdAt), 'dd MMM yyyy')}</td>

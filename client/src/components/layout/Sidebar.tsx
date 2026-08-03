@@ -1,7 +1,7 @@
 import { NavLink, useParams } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, AlertTriangle, ShieldAlert,
-  FileText, Bell, ClipboardList, GitBranch, Files, Users, Home,
+  FileText, Bell, ClipboardList, GitBranch, Files, Users, Home, PencilRuler,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
@@ -48,6 +48,7 @@ function ProjectNav({ projectId }: { projectId: string }) {
     { to: `${base}/compensation-events`, icon: FileText, label: 'Comp. Events' },
     { to: `${base}/notices`, icon: Bell, label: 'Notices' },
     { to: `${base}/documents`, icon: Files, label: 'Documents' },
+    { to: `${base}/drawings`, icon: PencilRuler, label: 'Drawings' },
     { to: `${base}/ce-whatif`, icon: GitBranch, label: 'CE What-If' },
     { to: `${base}/audit`, icon: ClipboardList, label: 'Audit Trail' },
   ]
