@@ -16,6 +16,9 @@ export const resetPassword = (token: string, password: string) =>
 export const getMe = () =>
   api.get<User>('/auth/me').then((r) => r.data)
 
+export const updateNotificationPrefs = (data: { notifyContractEvents?: boolean; notifyComments?: boolean }) =>
+  api.patch<User>('/auth/me/notifications', data).then((r) => r.data)
+
 export const getUsers = () =>
   api.get<User[]>('/auth/users').then((r) => r.data)
 

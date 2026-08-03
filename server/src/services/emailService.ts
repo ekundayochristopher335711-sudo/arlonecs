@@ -54,7 +54,7 @@ export async function sendOverdueNotifications() {
 
   const projects = await prisma.project.findMany({
     where: { id: { in: [...new Set(dueCEs.map((ce) => ce.projectId))] } },
-    include: { members: { include: { user: { select: { email: true, name: true } } } } },
+    include: { members: { include: { user: { select: { email: true, name: true, notifyContractEvents: true } } } } },
   })
 
   for (const project of projects) {
@@ -63,7 +63,7 @@ export async function sendOverdueNotifications() {
     const dueSoon = projectCEs.filter((ce) => ce.dateResponseDue && ce.dateResponseDue >= now && ce.dateResponseDue < soon)
     const quotationDue = projectCEs.filter((ce) => ce.status === 'NOTIFIED' && ce.dateQuotationDue && ce.dateQuotationDue < soon)
     const recipients = project.members
-      .filter((m) => m.role !== 'VIEWER')
+      .filter((m) => m.role !== 'VIEWER' && m.user.notifyContractEvents)
       .map((m) => m.user.email)
 
     if (recipients.length === 0) continue
@@ -152,6 +152,55 @@ export async function sendInvitationEmail(
       </p>
       <p style="color:#D1D5DB;font-size:11px;margin:8px 0 0">
         Or copy this link: ${inviteUrl}
+      </p>
+    `),
+  })
+}
+
+// Contract events are legally significant — an unnoticed one costs money — so
+// these go to every project member who hasn't opted out.
+export async function notifyContractEvent(opts: {
+  projectId: string
+  excludeUserId?: string
+  heading: string
+  reference: string
+  subject: string
+  fields: Array<[string, string]>
+  note?: string
+}) {
+  if (!emailConfigured()) return
+
+  const project = await prisma.project.findUnique({
+    where: { id: opts.projectId },
+    include: { members: { include: { user: { select: { id: true, email: true, notifyContractEvents: true } } } } },
+  })
+  if (!project) return
+
+  const recipients = project.members
+    .filter((m) => m.user.id !== opts.excludeUserId && m.user.notifyContractEvents)
+    .map((m) => m.user.email)
+  if (recipients.length === 0) return
+
+  const rows = opts.fields.map(([label, value]) => `
+    <tr>
+      <td style="padding:6px 12px 6px 0;font-size:13px;color:#6B7280;white-space:nowrap">${label}</td>
+      <td style="padding:6px 0;font-size:13px;color:#0F1F4B;font-weight:bold">${value || '—'}</td>
+    </tr>`).join('')
+
+  await transporter.sendMail({
+    from: FROM(),
+    to: recipients.join(', '),
+    subject: `${opts.heading}: ${opts.reference} — ${project.name}`,
+    html: shell(`
+      <h3 style="color:#080F1C;font-size:18px;margin:0 0 4px">${opts.heading}</h3>
+      <p style="color:#6B7280;margin:0 0 16px;font-size:13px">${project.name}</p>
+      <p style="font-size:15px;color:#0F1F4B;font-weight:bold;margin:0 0 12px">${opts.subject}</p>
+      <table style="border-collapse:collapse">${rows}</table>
+      ${opts.note ? `<p style="color:#B45309;font-size:13px;margin-top:16px">${opts.note}</p>` : ''}
+      <p style="margin-top:20px">
+        <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#B45309" style="border-radius:8px">
+          <a href="${process.env.CLIENT_URL}" target="_blank" style="display:inline-block;padding:11px 26px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Open Aurum</a>
+        </td></tr></table>
       </p>
     `),
   })

@@ -11,6 +11,7 @@ import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage'
 import DocumentsPage from './pages/documents/DocumentsPage'
 import DrawingsPage from './pages/drawings/DrawingsPage'
 import UsersPage from './pages/admin/UsersPage'
+import NotificationsPage from './pages/settings/NotificationsPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import ProjectsPage from './pages/projects/ProjectsPage'
 import ProjectDetailPage from './pages/projects/ProjectDetailPage'
@@ -47,6 +48,7 @@ export default function App() {
           <Route index element={<Navigate to="/projects" replace />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="admin/users" element={<UsersPage />} />
+          <Route path="settings/notifications" element={<NotificationsPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailPage />} />
           <Route path="projects/:projectId/early-warnings" element={<EarlyWarningsPage />} />
           <Route path="projects/:projectId/risks" element={<RisksPage />} />

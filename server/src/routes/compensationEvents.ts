@@ -8,7 +8,7 @@ import { authenticate, AuthRequest } from '../middleware/auth'
 import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit, diffObjects } from '../services/auditService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
-import { sendCEStatusChangeNotification } from '../services/emailService'
+import { sendCEStatusChangeNotification, notifyContractEvent } from '../services/emailService'
 
 // Files are stored IN the database (bytea) so they survive serverless deploys
 // and are backed up with everything else. Legacy rows created before this
@@ -109,6 +109,23 @@ router.post('/:projectId/compensation-events',
         })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'CompensationEvent', entityId: ce.id, action: 'CREATE', ipAddress: req.ip })
+
+      notifyContractEvent({
+        projectId: req.params.projectId,
+        excludeUserId: req.user!.id,
+        heading: 'Compensation Event notified',
+        reference: ce.ceNumber,
+        subject: ce.title,
+        fields: [
+          ['Compensation Event', ce.ceNumber],
+          ['NEC clause', ce.clauseRef ?? 'Not stated'],
+          ['Date notified', ce.dateNotified.toLocaleDateString('en-GB')],
+          ['Response due', ce.dateResponseDue ? ce.dateResponseDue.toLocaleDateString('en-GB') : '—'],
+          ['Quotation due', ce.dateQuotationDue ? ce.dateQuotationDue.toLocaleDateString('en-GB') : '—'],
+        ],
+        note: 'A reply is required within the contractual period shown above.',
+      }).catch(console.error)
+
       res.status(201).json(ce)
     } catch {
       res.status(500).json({ message: 'Server error' })

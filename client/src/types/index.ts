@@ -20,6 +20,8 @@ export interface User {
   role: Role
   isActive?: boolean
   createdAt: string
+  notifyContractEvents?: boolean
+  notifyComments?: boolean
 }
 
 export interface ProjectMember {

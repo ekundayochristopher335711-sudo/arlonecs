@@ -146,7 +146,25 @@ router.get('/me', authenticate, async (req: AuthRequest, res): Promise<void> => 
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, name: true, role: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, createdAt: true, notifyContractEvents: true, notifyComments: true },
+    })
+    res.json(user)
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// Each person controls their own email volume
+router.patch('/me/notifications', authenticate, async (req: AuthRequest, res): Promise<void> => {
+  const { notifyContractEvents, notifyComments } = req.body
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: {
+        ...(typeof notifyContractEvents === 'boolean' ? { notifyContractEvents } : {}),
+        ...(typeof notifyComments === 'boolean' ? { notifyComments } : {}),
+      },
+      select: { id: true, email: true, name: true, role: true, createdAt: true, notifyContractEvents: true, notifyComments: true },
     })
     res.json(user)
   } catch {

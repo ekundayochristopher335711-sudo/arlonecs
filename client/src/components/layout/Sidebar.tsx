@@ -82,6 +82,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         <SectionLabel>Main</SectionLabel>
         <NavItem to="/projects" icon={FolderOpen} label="Projects" end />
         {user?.role === 'ADMIN' && <NavItem to="/admin/users" icon={Users} label="User Management" />}
+        <NavItem to="/settings/notifications" icon={Bell} label="Notifications" />
         {projectId && <ProjectNav projectId={projectId} />}
       </nav>
 

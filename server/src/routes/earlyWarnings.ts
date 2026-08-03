@@ -6,6 +6,7 @@ import { requireProjectAccess, requireProjectRole } from '../middleware/roleChec
 import { logAudit, diffObjects } from '../services/auditService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
 import { generateEarlyWarningPDF } from '../services/pdfService'
+import { notifyContractEvent } from '../services/emailService'
 
 const router = express.Router()
 
@@ -92,6 +93,22 @@ router.post('/:projectId/early-warnings',
         })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'EarlyWarning', entityId: ew.id, action: 'CREATE', ipAddress: req.ip })
+
+      notifyContractEvent({
+        projectId: req.params.projectId,
+        excludeUserId: req.user!.id,
+        heading: 'Early Warning raised',
+        reference: ew.ewNumber,
+        subject: ew.title,
+        fields: [
+          ['Early Warning', ew.ewNumber],
+          ['Date raised', ew.dateRaised.toLocaleDateString('en-GB')],
+          ['Required by', ew.dateRequired ? ew.dateRequired.toLocaleDateString('en-GB') : 'Not specified'],
+          ['Assigned to', ew.assignedTo ?? 'Unassigned'],
+        ],
+        note: 'Recipients should attend the next early warning meeting where this matter will be considered.',
+      }).catch(console.error)
+
       res.status(201).json(ew)
     } catch {
       res.status(500).json({ message: 'Server error' })

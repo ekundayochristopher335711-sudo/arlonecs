@@ -66,10 +66,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Contract events (early warnings, CEs, notices, deadlines) are legally
+  // significant, so they default on. Comment traffic is opt-out.
+  notifyContractEvents Boolean @default(true)
+  notifyComments       Boolean @default(true)
+
   projectMembers ProjectMember[]
   auditLogs      AuditLog[]
   passwordResets PasswordReset[]
   comments       Comment[]
+  reactions      CommentReaction[]
 }
 
 model PasswordReset {
@@ -249,22 +255,46 @@ enum CommentTarget {
   NOTICE
 }
 
+enum CommentVisibility {
+  EVERYONE
+  MANAGERS_ONLY
+}
+
 // Discussion thread attached to a project or to any record within it.
 // Kept polymorphic so one component serves every module.
 model Comment {
-  id         String        @id @default(cuid())
+  id         String            @id @default(cuid())
   projectId  String
   targetType CommentTarget
   targetId   String
   body       String
   authorId   String
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  // MANAGERS_ONLY hides commercial discussion (e.g. funds) from Viewer
+  // accounts, which are typically the client side and subcontractors.
+  visibility CommentVisibility @default(EVERYONE)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  author  User    @relation(fields: [authorId], references: [id])
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author    User              @relation(fields: [authorId], references: [id])
+  reactions CommentReaction[]
 
   @@index([projectId, targetType, targetId])
+}
+
+// One row per person per emoji, so we can show who reacted with what.
+model CommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, emoji])
+  @@index([commentId])
 }
 
 model Invitation {

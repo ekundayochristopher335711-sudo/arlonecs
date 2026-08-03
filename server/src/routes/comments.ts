@@ -34,6 +34,10 @@ async function describeTarget(targetType: Target, targetId: string, projectName:
   }
 }
 
+// Managers (and platform admins) see restricted comments; viewers never do.
+const canSeeRestricted = (req: AuthRequest): boolean =>
+  req.user!.role === 'ADMIN' || req.projectRole === 'ADMIN' || req.projectRole === 'COMMERCIAL_MANAGER'
+
 // ── List the thread for one record (or the project itself) ───────────────────
 router.get('/:projectId/comments', authenticate, requireProjectAccess, async (req: AuthRequest, res): Promise<void> => {
   const { targetType, targetId } = req.query
@@ -47,8 +51,14 @@ router.get('/:projectId/comments', authenticate, requireProjectAccess, async (re
         projectId: req.params.projectId,
         targetType: targetType as Target,
         targetId: (targetId as string) || req.params.projectId,
+        // Restricted comments are filtered out in the query itself, so they
+        // never leave the server for someone who shouldn't see them.
+        ...(canSeeRestricted(req) ? {} : { visibility: 'EVERYONE' as const }),
       },
-      include: { author: { select: { id: true, name: true, email: true } } },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+        reactions: { include: { user: { select: { id: true, name: true } } } },
+      },
       orderBy: { createdAt: 'asc' },
     })
     res.json(comments)
@@ -56,6 +66,50 @@ router.get('/:projectId/comments', authenticate, requireProjectAccess, async (re
     res.status(500).json({ message: 'Server error' })
   }
 })
+
+// ── Toggle a reaction (WhatsApp-style: tap once to add, again to remove) ─────
+router.post('/:projectId/comments/:id/reactions',
+  authenticate,
+  requireProjectAccess,
+  body('emoji').isString().isLength({ min: 1, max: 8 }),
+  async (req: AuthRequest, res): Promise<void> => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) { res.status(400).json({ errors: errors.array() }); return }
+    if (req.projectActive === false) {
+      res.status(403).json({ message: 'This project has been completed and is read-only.' })
+      return
+    }
+    try {
+      const comment = await prisma.comment.findFirst({
+        where: { id: req.params.id, projectId: req.params.projectId },
+      })
+      if (!comment) { res.status(404).json({ message: 'Comment not found' }); return }
+      // Don't let a viewer react to a comment they aren't allowed to see
+      if (comment.visibility === 'MANAGERS_ONLY' && !canSeeRestricted(req)) {
+        res.status(403).json({ message: 'Not permitted' })
+        return
+      }
+
+      const emoji = req.body.emoji as string
+      const existing = await prisma.commentReaction.findUnique({
+        where: { commentId_userId_emoji: { commentId: comment.id, userId: req.user!.id, emoji } },
+      })
+      if (existing) {
+        await prisma.commentReaction.delete({ where: { id: existing.id } })
+      } else {
+        await prisma.commentReaction.create({ data: { commentId: comment.id, userId: req.user!.id, emoji } })
+      }
+
+      const reactions = await prisma.commentReaction.findMany({
+        where: { commentId: comment.id },
+        include: { user: { select: { id: true, name: true } } },
+      })
+      res.json(reactions)
+    } catch {
+      res.status(500).json({ message: 'Server error' })
+    }
+  },
+)
 
 // ── Post a comment ───────────────────────────────────────────────────────────
 // Viewers are intentionally allowed to comment: the client side of a contract
@@ -73,22 +127,33 @@ router.post('/:projectId/comments',
     const projectId = req.params.projectId
     const targetType = req.body.targetType as Target
     const targetId = req.body.targetId || projectId
+    // Only managers may restrict a comment; a viewer's request is ignored
+    const visibility = req.body.visibility === 'MANAGERS_ONLY' && canSeeRestricted(req)
+      ? 'MANAGERS_ONLY' as const
+      : 'EVERYONE' as const
 
     try {
       const comment = await prisma.comment.create({
-        data: { projectId, targetType, targetId, body: req.body.body, authorId: req.user!.id },
-        include: { author: { select: { id: true, name: true, email: true } } },
+        data: { projectId, targetType, targetId, body: req.body.body, authorId: req.user!.id, visibility },
+        include: {
+          author: { select: { id: true, name: true, email: true } },
+          reactions: { include: { user: { select: { id: true, name: true } } } },
+        },
       })
       await logAudit({ userId: req.user!.id, projectId, entityType: 'Comment', entityId: comment.id, action: 'CREATE', ipAddress: req.ip })
 
       // Notify the rest of the project team (fire-and-forget)
       prisma.project.findUnique({
         where: { id: projectId },
-        include: { members: { include: { user: { select: { id: true, email: true } } } } },
+        include: { members: { include: { user: { select: { id: true, email: true, role: true, notifyComments: true } } } } },
       }).then(async (project) => {
         if (!project) return
         const recipients = project.members
           .filter((m) => m.user.id !== req.user!.id)
+          // Respect each person's notification preference
+          .filter((m) => m.user.notifyComments)
+          // A restricted comment must not leak through the notification email
+          .filter((m) => visibility === 'EVERYONE' || m.role === 'ADMIN' || m.role === 'COMMERCIAL_MANAGER' || m.user.role === 'ADMIN')
           .map((m) => m.user.email)
         if (recipients.length === 0) return
         const on = await describeTarget(targetType, targetId, project.name)

@@ -5,6 +5,7 @@ import { authenticate, AuthRequest } from '../middleware/auth'
 import { requireProjectAccess, requireProjectRole } from '../middleware/roleCheck'
 import { logAudit } from '../services/auditService'
 import { generateNoticePDF } from '../services/pdfService'
+import { notifyContractEvent } from '../services/emailService'
 import { nextNumber, createWithRetry } from '../services/numberingService'
 
 const NOTICE_TYPES = ['EARLY_WARNING', 'COMPENSATION_EVENT', 'INSTRUCTION', 'ACCEPTANCE', 'REJECTION', 'QUOTATION', 'ASSESSMENT', 'GENERAL']
@@ -70,6 +71,23 @@ router.post('/:projectId/notices',
         })
       })
       await logAudit({ userId: req.user!.id, projectId: req.params.projectId, entityType: 'Notice', entityId: notice.id, action: 'CREATE', ipAddress: req.ip })
+
+      notifyContractEvent({
+        projectId: req.params.projectId,
+        excludeUserId: req.user!.id,
+        heading: 'Notice issued',
+        reference: notice.noticeNumber,
+        subject: notice.title,
+        fields: [
+          ['Notice', notice.noticeNumber],
+          ['Type', String(notice.type).replace(/_/g, ' ')],
+          ['Issued to', notice.issuedTo],
+          ['Date issued', notice.dateIssued.toLocaleDateString('en-GB')],
+          ['Response due', notice.dueDate ? notice.dueDate.toLocaleDateString('en-GB') : 'Not specified'],
+        ],
+        note: 'This notice forms part of the project’s contractual record.',
+      }).catch(console.error)
+
       res.status(201).json(notice)
     } catch {
       res.status(500).json({ message: 'Server error' })
