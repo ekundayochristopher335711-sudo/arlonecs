@@ -83,16 +83,35 @@ function addDocumentTitle(doc: Doc, title: string, reference?: string, y?: numbe
   return next + 20
 }
 
-function addFooter(doc: Doc, project: ProjectMeta, reference: string, pageNum = 1) {
-  const y = doc.page.height - 46
+// Draws the footer on the CURRENT page. The bottom margin is temporarily
+// removed: writing below the margin makes PDFKit spill onto a new page, which
+// is what produced spurious blank pages.
+function drawFooter(doc: Doc, project: ProjectMeta, reference: string, pageNum: number, pageCount: number) {
+  const savedBottom = doc.page.margins.bottom
+  doc.page.margins.bottom = 0
+
+  const y = doc.page.height - 42
   doc.moveTo(40, y - 8).lineTo(doc.page.width - 40, y - 8).lineWidth(0.5).strokeColor(RULE).stroke()
   doc.lineWidth(1)
   doc.font('Helvetica').fontSize(7.5).fillColor(MUTED)
-    .text(`${project.name}  |  ${reference}  |  Generated ${new Date().toLocaleString('en-GB')}  |  CONFIDENTIAL`, 40, y, {
-      width: doc.page.width - 80,
-    })
+    .text(`${project.name}  |  ${reference}  |  Generated ${new Date().toLocaleString('en-GB')}  |  CONFIDENTIAL`,
+      40, y, { width: doc.page.width - 140, lineBreak: false })
   doc.font('Helvetica').fontSize(7.5).fillColor(MUTED)
-    .text(`Page ${pageNum}`, doc.page.width - 90, y, { width: 50, align: 'right' })
+    .text(`Page ${pageNum} of ${pageCount}`, doc.page.width - 130, y, { width: 90, align: 'right', lineBreak: false })
+
+  doc.page.margins.bottom = savedBottom
+}
+
+// Stamps the footer on every buffered page, then closes the document. Using
+// buffered pages is what allows an accurate "Page 1 of 3".
+function finalise(doc: Doc, project: ProjectMeta, reference: string) {
+  const range = doc.bufferedPageRange()
+  for (let i = 0; i < range.count; i++) {
+    doc.switchToPage(range.start + i)
+    drawFooter(doc, project, reference, i + 1, range.count)
+  }
+  doc.flushPages()
+  doc.end()
 }
 
 // Section heading: a bold label above a hairline rule (formal, not a colour bar)
@@ -163,7 +182,7 @@ export function generateEarlyWarningPDF(
 ) {
   const meta = asMeta(project)
   const ref = String(ew['ewNumber'] ?? 'EW')
-  const doc = new PDFDocument({ size: 'A4', margin: 40 })
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true })
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, ref)}"`)
   doc.pipe(res)
@@ -193,8 +212,7 @@ export function generateEarlyWarningPDF(
       40, doc.y, { width: doc.page.width - 80, lineGap: 2 })
 
   signatureBlock(doc)
-  addFooter(doc, meta, ref)
-  doc.end()
+  finalise(doc, meta, ref)
 }
 
 const NOTICE_TYPE_LABELS: Record<string, string> = {
@@ -216,7 +234,7 @@ export function generateNoticePDF(
   const meta = asMeta(project)
   const typeLabel = NOTICE_TYPE_LABELS[String(notice['type'])] ?? 'Notice'
   const ref = String(notice['noticeNumber'] ?? 'Notice')
-  const doc = new PDFDocument({ size: 'A4', margin: 40 })
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true })
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, ref)}"`)
   doc.pipe(res)
@@ -248,8 +266,7 @@ export function generateNoticePDF(
       40, doc.y, { width: doc.page.width - 80 })
 
   signatureBlock(doc)
-  addFooter(doc, meta, ref)
-  doc.end()
+  finalise(doc, meta, ref)
 }
 
 export function generateRiskRegisterPDF(
@@ -258,7 +275,7 @@ export function generateRiskRegisterPDF(
   project: ProjectMeta | string,
 ) {
   const meta = asMeta(project)
-  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape' })
+  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape', bufferPages: true })
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, 'Risk-Register')}"`)
   doc.pipe(res)
@@ -288,8 +305,7 @@ export function generateRiskRegisterPDF(
     }
   })
 
-  addFooter(doc, meta, 'Risk Register')
-  doc.end()
+  finalise(doc, meta, 'Risk Register')
 }
 
 export function generateCESummaryPDF(
@@ -298,7 +314,7 @@ export function generateCESummaryPDF(
   project: ProjectMeta | string,
 ) {
   const meta = asMeta(project)
-  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape' })
+  const doc = new PDFDocument({ size: 'A4', margin: 40, layout: 'landscape', bufferPages: true })
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, 'CE-Summary')}"`)
   doc.pipe(res)
@@ -333,8 +349,7 @@ export function generateCESummaryPDF(
     }
   })
 
-  addFooter(doc, meta, 'CE Summary')
-  doc.end()
+  finalise(doc, meta, 'CE Summary')
 }
 
 export function generateCommercialDashboardPDF(
@@ -352,7 +367,7 @@ export function generateCommercialDashboardPDF(
   },
 ) {
   const meta = data.project ?? { name: data.projectName }
-  const doc = new PDFDocument({ size: 'A4', margin: 40 })
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true })
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${fileNameFor(meta, 'Commercial-Report')}"`)
   doc.pipe(res)
@@ -390,6 +405,5 @@ export function generateCommercialDashboardPDF(
   tableRow(doc, ['Status', 'Count'], statusWidths, true)
   data.cesByStatus.forEach((row) => tableRow(doc, [row.status, String(row.count)], statusWidths))
 
-  addFooter(doc, meta, 'Commercial Report')
-  doc.end()
+  finalise(doc, meta, 'Commercial Report')
 }
