@@ -1,28 +1,29 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { PageLoader } from './components/ui/LogoSpinner'
-import Layout from './components/layout/Layout'
-import LoginPage from './pages/auth/LoginPage'
-import RegisterPage from './pages/auth/RegisterPage'
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
-import ResetPasswordPage from './pages/auth/ResetPasswordPage'
-import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage'
-import DocumentsPage from './pages/documents/DocumentsPage'
-import DrawingsPage from './pages/drawings/DrawingsPage'
-import UsersPage from './pages/admin/UsersPage'
-import NotificationsPage from './pages/settings/NotificationsPage'
-import MyActionsPage from './pages/home/MyActionsPage'
 import LandingPage from './pages/marketing/LandingPage'
-import DashboardPage from './pages/dashboard/DashboardPage'
-import ProjectsPage from './pages/projects/ProjectsPage'
-import ProjectDetailPage from './pages/projects/ProjectDetailPage'
-import EarlyWarningsPage from './pages/early-warnings/EarlyWarningsPage'
-import RisksPage from './pages/risks/RisksPage'
-import CompensationEventsPage from './pages/compensation-events/CompensationEventsPage'
-import NoticesPage from './pages/notices/NoticesPage'
-import AuditLogPage from './pages/audit/AuditLogPage'
-import CEWhatIfPage from './pages/ce-whatif/CEWhatIfPage'
+
+const Layout = lazy(() => import('./components/layout/Layout'))
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
+const AcceptInvitationPage = lazy(() => import('./pages/invitations/AcceptInvitationPage'))
+const DocumentsPage = lazy(() => import('./pages/documents/DocumentsPage'))
+const DrawingsPage = lazy(() => import('./pages/drawings/DrawingsPage'))
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'))
+const NotificationsPage = lazy(() => import('./pages/settings/NotificationsPage'))
+const MyActionsPage = lazy(() => import('./pages/home/MyActionsPage'))
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'))
+const ProjectsPage = lazy(() => import('./pages/projects/ProjectsPage'))
+const ProjectDetailPage = lazy(() => import('./pages/projects/ProjectDetailPage'))
+const EarlyWarningsPage = lazy(() => import('./pages/early-warnings/EarlyWarningsPage'))
+const RisksPage = lazy(() => import('./pages/risks/RisksPage'))
+const CompensationEventsPage = lazy(() => import('./pages/compensation-events/CompensationEventsPage'))
+const NoticesPage = lazy(() => import('./pages/notices/NoticesPage'))
+const AuditLogPage = lazy(() => import('./pages/audit/AuditLogPage'))
+const CEWhatIfPage = lazy(() => import('./pages/ce-whatif/CEWhatIfPage'))
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
