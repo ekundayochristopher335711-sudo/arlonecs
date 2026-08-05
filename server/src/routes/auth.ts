@@ -37,7 +37,7 @@ router.post('/register',
       // Role is NEVER taken from the request body. Self-registered users are
       // COMMERCIAL_MANAGER so they can create and administer their own projects;
       // access to any other project still requires membership.
-      // Accounts start INACTIVE — a platform admin must approve them before
+      // Accounts start INACTIVE - a platform admin must approve them before
       // first sign-in. (Invited users bypass this; the invite is the approval.)
       const user = await prisma.user.create({
         data: { email, password: hashed, name, role: 'COMMERCIAL_MANAGER', isActive: false },
@@ -71,7 +71,7 @@ router.post('/login',
       const valid = await bcrypt.compare(password, user.password)
       if (!valid) { res.status(401).json({ message: 'Invalid credentials' }); return }
 
-      // Correct password but not yet approved/reactivated — tell them why
+      // Correct password but not yet approved/reactivated - tell them why
       if (!user.isActive) {
         res.status(403).json({ message: 'Your account is awaiting approval by an administrator. You will be able to sign in once it has been approved.' })
         return
@@ -99,7 +99,7 @@ router.post('/forgot-password',
 
     try {
       const user = await prisma.user.findUnique({ where: { email: req.body.email } })
-      // Always return 200 — never reveal whether an email is registered
+      // Always return 200 - never reveal whether an email is registered
       if (user && user.isActive) {
         await prisma.passwordReset.deleteMany({ where: { userId: user.id, usedAt: null } })
         const reset = await prisma.passwordReset.create({

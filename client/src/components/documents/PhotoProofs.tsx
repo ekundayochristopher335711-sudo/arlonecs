@@ -60,7 +60,7 @@ export default function PhotoProofs({ ceId, ewId }: Props) {
       queryClient.invalidateQueries({ queryKey: key })
       toast.success('Photo added as evidence')
     },
-    onError: () => toast.error('Upload failed — images only, up to 15MB.'),
+    onError: () => toast.error('Upload failed - images only, up to 15MB.'),
   })
 
   const deleteMutation = useMutation({

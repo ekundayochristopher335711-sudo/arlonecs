@@ -20,18 +20,18 @@ async function describeTarget(targetType: Target, targetId: string, projectName:
     if (targetType === 'PROJECT') return projectName
     if (targetType === 'EARLY_WARNING') {
       const r = await prisma.earlyWarning.findUnique({ where: { id: targetId }, select: { ewNumber: true, title: true } })
-      return r ? `${r.ewNumber} — ${r.title}` : 'Early Warning'
+      return r ? `${r.ewNumber} - ${r.title}` : 'Early Warning'
     }
     if (targetType === 'RISK') {
       const r = await prisma.riskItem.findUnique({ where: { id: targetId }, select: { riskId: true, description: true } })
-      return r ? `${r.riskId} — ${r.description.slice(0, 60)}` : 'Risk'
+      return r ? `${r.riskId} - ${r.description.slice(0, 60)}` : 'Risk'
     }
     if (targetType === 'COMPENSATION_EVENT') {
       const r = await prisma.compensationEvent.findUnique({ where: { id: targetId }, select: { ceNumber: true, title: true } })
-      return r ? `${r.ceNumber} — ${r.title}` : 'Compensation Event'
+      return r ? `${r.ceNumber} - ${r.title}` : 'Compensation Event'
     }
     const r = await prisma.notice.findUnique({ where: { id: targetId }, select: { noticeNumber: true, title: true } })
-    return r ? `${r.noticeNumber} — ${r.title}` : 'Notice'
+    return r ? `${r.noticeNumber} - ${r.title}` : 'Notice'
   } catch {
     return projectName
   }
@@ -150,7 +150,7 @@ router.post('/:projectId/comments/:id/reactions',
         await prisma.commentReaction.delete({ where: { id: existing.id } })
       } else {
         await prisma.commentReaction.create({ data: { commentId: comment.id, userId: req.user!.id, emoji } })
-        // An acknowledgement is contractually meaningful — record who
+        // An acknowledgement is contractually meaningful - record who
         // acknowledged what and when, so it can be evidenced later.
         if (emoji === ACK_EMOJI) {
           await logAudit({

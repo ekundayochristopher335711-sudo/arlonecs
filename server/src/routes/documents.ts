@@ -17,7 +17,7 @@ type Category = typeof CATEGORIES[number]
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic']
 
-// Never select `data` in list responses — file bytes must not travel with JSON
+// Never select `data` in list responses - file bytes must not travel with JSON
 const docSelect = {
   id: true, projectId: true, ceId: true, ewId: true, category: true, reference: true,
   name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true,

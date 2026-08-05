@@ -196,7 +196,7 @@ export default function CEWhatIfPage() {
                     </td>
                     <td className="px-4 py-3 text-xs font-medium text-gold-600">£{whatIf.toLocaleString('en-GB')}</td>
                     <td className="px-4 py-3">
-                      {impact === 0 ? <span className="text-slate-400 text-xs">—</span> :
+                      {impact === 0 ? <span className="text-slate-400 text-xs">-</span> :
                         impact > 0 ? <span className="text-green-600 text-xs flex items-center gap-1"><TrendingUp className="w-3 h-3" />+£{impact.toLocaleString('en-GB')}</span> :
                         <span className="text-red-600 text-xs flex items-center gap-1"><TrendingDown className="w-3 h-3" />-£{Math.abs(impact).toLocaleString('en-GB')}</span>
                       }

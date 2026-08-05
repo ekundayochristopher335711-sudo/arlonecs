@@ -20,7 +20,7 @@ describe('CE workflow (forward-only)', () => {
     expect(isValidTransition('QUOTED', 'QUOTED')).toBe(true)
   })
 
-  it('refuses to move backwards — history must not be rewritten', () => {
+  it('refuses to move backwards - history must not be rewritten', () => {
     expect(isValidTransition('QUOTED', 'NOTIFIED')).toBe(false)
     expect(isValidTransition('CLOSED', 'IMPLEMENTED')).toBe(false)
     expect(isValidTransition('IMPLEMENTED', 'NOTIFIED')).toBe(false)
@@ -33,15 +33,15 @@ describe('CE workflow (forward-only)', () => {
 })
 
 describe('NEC clause clocks', () => {
-  it('cl. 61.4 — the reply is due one week after notification', () => {
+  it('cl. 61.4 - the reply is due one week after notification', () => {
     expect(replyDueFrom(at('2026-08-02'))).toEqual(at('2026-08-09'))
   })
 
-  it('cl. 62.3 — a quotation is due three weeks after notification', () => {
+  it('cl. 62.3 - a quotation is due three weeks after notification', () => {
     expect(quotationDueFrom(at('2026-08-02'))).toEqual(at('2026-08-23'))
   })
 
-  it('cl. 62.3 — the PM replies to a quotation within two weeks', () => {
+  it('cl. 62.3 - the PM replies to a quotation within two weeks', () => {
     expect(quoteReplyDueFrom(at('2026-08-10'))).toEqual(at('2026-08-24'))
   })
 
@@ -55,7 +55,7 @@ describe('NEC clause clocks', () => {
   })
 })
 
-describe('cl. 61.3 — the 8-week time bar', () => {
+describe('cl. 61.3 - the 8-week time bar', () => {
   it('falls exactly 56 days after the date of awareness', () => {
     expect(timeBarDeadline(at('2026-01-01'))).toEqual(at('2026-02-26'))
   })

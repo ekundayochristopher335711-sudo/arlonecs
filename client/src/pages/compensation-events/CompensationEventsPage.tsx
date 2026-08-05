@@ -33,7 +33,7 @@ const schema = z.object({
   status: z.enum(['NOTIFIED', 'QUOTED', 'ASSESSED', 'IMPLEMENTED', 'CLOSED']).optional(),
 })
 
-// NEC cl. 61.3 — a CE must be notified within 8 weeks of awareness
+// NEC cl. 61.3 - a CE must be notified within 8 weeks of awareness
 const TIME_BAR_DAYS = 56
 
 function TimeBarHint({ awareness, notified }: { awareness?: string; notified?: string }) {
@@ -43,22 +43,22 @@ function TimeBarHint({ awareness, notified }: { awareness?: string; notified?: s
   const daysLeft = differenceInDays(deadline, ref)
   if (daysLeft < 0) return (
     <p className="text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-      ⚠️ Time-barred: notification is {-daysLeft} day{daysLeft !== -1 ? 's' : ''} past the 8-week limit under NEC cl. 61.3 — entitlement may be lost.
+      ⚠️ Time-barred: notification is {-daysLeft} day{daysLeft !== -1 ? 's' : ''} past the 8-week limit under NEC cl. 61.3 - entitlement may be lost.
     </p>
   )
   return (
     <p className={`text-xs font-medium rounded-lg px-3 py-2 border ${daysLeft <= 14 ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-emerald-700 bg-emerald-50 border-emerald-100'}`}>
-      ⏱ {daysLeft} day{daysLeft !== 1 ? 's' : ''} left on the 8-week notification clock (NEC cl. 61.3) — expires {format(deadline, 'dd MMM yyyy')}.
+      ⏱ {daysLeft} day{daysLeft !== 1 ? 's' : ''} left on the 8-week notification clock (NEC cl. 61.3) - expires {format(deadline, 'dd MMM yyyy')}.
     </p>
   )
 }
 
 function DeadlineClock({ ce }: { ce: CompensationEvent }) {
-  if (ce.status === 'CLOSED') return <span className="text-xs text-slate-300">—</span>
+  if (ce.status === 'CLOSED') return <span className="text-xs text-slate-300">-</span>
   const due = ce.status === 'NOTIFIED' && ce.dateQuotationDue && (!ce.dateResponseDue || new Date(ce.dateQuotationDue) < new Date(ce.dateResponseDue))
     ? { date: ce.dateQuotationDue, label: 'quote' }
     : ce.dateResponseDue ? { date: ce.dateResponseDue, label: 'reply' } : null
-  if (!due) return <span className="text-xs text-slate-300">—</span>
+  if (!due) return <span className="text-xs text-slate-300">-</span>
   const days = differenceInDays(parseISO(due.date), new Date())
   if (days < 0) return (
     <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-full">
@@ -173,7 +173,7 @@ export default function CompensationEventsPage() {
       toast.success(`${deleting?.ceNumber ?? 'CE'} deleted`)
       setDeleting(null)
     },
-    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
+    onError: () => { toast.error('Delete failed - only project admins can delete records.'); setDeleting(null) },
   })
 
   const uploadMutation = useMutation({
@@ -261,7 +261,7 @@ export default function CompensationEventsPage() {
                       <p className="font-medium text-slate-800">{ce.title}</p>
                       <p className="text-xs text-slate-400 truncate max-w-xs">{ce.description}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{ce.clauseRef || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{ce.clauseRef || '-'}</td>
                     <td className="px-4 py-3 text-xs text-slate-600">{format(parseISO(ce.dateNotified), 'dd MMM yyyy')}</td>
                     <td className="px-4 py-3 text-xs">
                       {ce.dateResponseDue ? (
@@ -270,7 +270,7 @@ export default function CompensationEventsPage() {
                           {isOverdue && <span className="block text-red-500">Overdue</span>}
                           {!isOverdue && daysLeft !== null && daysLeft <= 7 && <span className="block text-amber-500">{daysLeft}d left</span>}
                         </span>
-                      ) : '—'}
+                      ) : '-'}
                     </td>
                     <td className="px-4 py-3"><DeadlineClock ce={ce} /></td>
                     <td className="px-4 py-3 text-xs font-medium text-slate-700">
@@ -318,7 +318,7 @@ export default function CompensationEventsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Valuation Amount (£)" type="number" placeholder="25000" {...register('valuationAmount')} />
-            {/* NEC workflow is forward-only — earlier stages are not offered */}
+            {/* NEC workflow is forward-only - earlier stages are not offered */}
             {editing && <Select label="Status" options={statusOptions.filter((o) => NEC_WORKFLOW.indexOf(o.value) >= NEC_WORKFLOW.indexOf(editing.status))} {...register('status')} />}
           </div>
           {!editing && (
@@ -336,7 +336,7 @@ export default function CompensationEventsPage() {
         </form>
       </Modal>
 
-      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ceNumber} — ${discussing.title}` : ''} size="lg">
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ceNumber} - ${discussing.title}` : ''} size="lg">
         {discussing && (
           <div className="space-y-6">
             <PhotoProofs ceId={discussing.id} />

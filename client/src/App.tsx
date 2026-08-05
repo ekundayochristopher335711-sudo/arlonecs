@@ -44,7 +44,7 @@ export default function App() {
         {/* Public marketing site */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* The application itself — layout route, children resolve from root */}
+        {/* The application itself - layout route, children resolve from root */}
         <Route
           element={
             <PrivateRoute>
@@ -68,7 +68,7 @@ export default function App() {
           <Route path="projects/:projectId/ce-whatif" element={<CEWhatIfPage />} />
         </Route>
 
-        {/* Unknown address — send people somewhere useful */}
+        {/* Unknown address - send people somewhere useful */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

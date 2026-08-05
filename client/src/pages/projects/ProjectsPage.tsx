@@ -113,7 +113,7 @@ export default function ProjectsPage() {
           {completedProjects.length > 0 && (
             <>
               <div className="flex items-center gap-3 mt-10 mb-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed — read-only archive</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed - read-only archive</p>
                 <div className="flex-1 border-t border-dashed border-slate-200" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75">

@@ -35,7 +35,7 @@ export const diffObjects = (
   after: Record<string, unknown>,
 ): Record<string, { old: unknown; new: unknown }> | undefined => {
   const changes: Record<string, { old: unknown; new: unknown }> = {}
-  // Only diff fields present in the update — fields the caller didn't touch
+  // Only diff fields present in the update - fields the caller didn't touch
   // must not appear in the audit trail as changes.
   for (const key of Object.keys(after)) {
     if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) {

@@ -129,7 +129,7 @@ router.post('/:projectId/members',
   },
 )
 
-// Complete a project — freezes it read-only, drops it from reminder emails.
+// Complete a project - freezes it read-only, drops it from reminder emails.
 // Inline admin check (not requireProjectRole) so reopen also works while frozen.
 const isProjectAdmin = (req: AuthRequest) => req.user!.role === 'ADMIN' || req.projectRole === 'ADMIN'
 

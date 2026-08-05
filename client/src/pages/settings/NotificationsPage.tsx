@@ -94,7 +94,7 @@ export default function NotificationsPage() {
       icon: FileWarning,
       title: 'Contract events',
       description:
-        'Early warnings raised, compensation events notified, notices issued, CE status changes, and the daily deadline digest. These are contractual — missing one can cost money.',
+        'Early warnings raised, compensation events notified, notices issued, CE status changes, and the daily deadline digest. These are contractual - missing one can cost money.',
       recommended: 'Recommended: keep on',
     },
     {

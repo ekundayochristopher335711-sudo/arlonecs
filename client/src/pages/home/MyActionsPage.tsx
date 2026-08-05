@@ -105,7 +105,7 @@ export default function MyActionsPage() {
       ) : (
         <div className="space-y-4">
           {data!.overdueCEs.length > 0 && (
-            <Section icon={AlertOctagon} title="Overdue — action required" count={data!.overdueCEs.length} tone="red">
+            <Section icon={AlertOctagon} title="Overdue - action required" count={data!.overdueCEs.length} tone="red">
               {data!.overdueCEs.map((ce) => (
                 <CERow key={ce.id} ce={ce} overdue onOpen={() => navigate(`/projects/${ce.projectId}/compensation-events`)} />
               ))}

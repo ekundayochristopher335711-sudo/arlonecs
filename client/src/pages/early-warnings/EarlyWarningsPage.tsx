@@ -105,7 +105,7 @@ export default function EarlyWarningsPage() {
       toast.success(`${deleting?.ewNumber ?? 'EW'} deleted`)
       setDeleting(null)
     },
-    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
+    onError: () => { toast.error('Delete failed - only project admins can delete records.'); setDeleting(null) },
   })
 
   // Client-side search keeps it instant on a busy register
@@ -181,7 +181,7 @@ export default function EarlyWarningsPage() {
                     <p className="text-xs text-slate-400 truncate max-w-xs">{ew.description}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{format(parseISO(ew.dateRaised), 'dd MMM yyyy')}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">{ew.dateRequired ? format(parseISO(ew.dateRequired), 'dd MMM yyyy') : '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 text-xs">{ew.dateRequired ? format(parseISO(ew.dateRequired), 'dd MMM yyyy') : '-'}</td>
                   <td className="px-4 py-3"><StatusBadge status={ew.status} /></td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{ew.riskItems?.length ?? 0}</td>
                   <td className="px-4 py-3">
@@ -210,7 +210,7 @@ export default function EarlyWarningsPage() {
         </div>
       )}
 
-      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ewNumber} — ${discussing.title}` : ''} size="lg">
+      <Modal open={!!discussing} onClose={() => setDiscussing(null)} title={discussing ? `${discussing.ewNumber} - ${discussing.title}` : ''} size="lg">
         {discussing && (
           <div className="space-y-6">
             <PhotoProofs ewId={discussing.id} />

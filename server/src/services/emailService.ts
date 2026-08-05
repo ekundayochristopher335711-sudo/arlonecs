@@ -37,11 +37,11 @@ export async function sendOverdueNotifications() {
   const dueCEs = await prisma.compensationEvent.findMany({
     where: {
       status: { not: 'CLOSED' },
-      // Completed projects are archived — no more reminder emails
+      // Completed projects are archived - no more reminder emails
       project: { isActive: true },
       OR: [
         { dateResponseDue: { lt: soon } },
-        // cl. 62.3 quotation clock — runs while the CE awaits a quotation
+        // cl. 62.3 quotation clock - runs while the CE awaits a quotation
         { status: 'NOTIFIED', dateQuotationDue: { lt: soon } },
       ],
     },
@@ -91,9 +91,9 @@ export async function sendOverdueNotifications() {
     await transporter.sendMail({
       from: FROM(),
       to: recipients.join(', '),
-      subject: `[ACTION REQUIRED] ${overdue.length} overdue / ${dueSoon.length + quotationDue.length} due soon — ${project.name}`,
+      subject: `[ACTION REQUIRED] ${overdue.length} overdue / ${dueSoon.length + quotationDue.length} due soon - ${project.name}`,
       html: shell(`
-        ${table(`⚠️ Overdue Compensation Events — ${project.name}`, overdue, '#DC2626')}
+        ${table(`⚠️ Overdue Compensation Events - ${project.name}`, overdue, '#DC2626')}
         ${table('⏳ Response due within 3 days', dueSoon, '#D97706')}
         ${table('📋 Quotation due (NEC cl. 62.3)', quotationDue, '#B45309', (ce) => ce.dateQuotationDue)}
         <p style="margin-top:20px"><a href="${process.env.CLIENT_URL}" style="background:#B45309;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Open Aurum Project Controls</a></p>
@@ -116,7 +116,7 @@ export async function sendCEStatusChangeNotification(
   await transporter.sendMail({
     from: FROM(),
     to: recipientEmails.join(', '),
-    subject: `CE Status Update: ${ceNumber} → ${newStatus} — ${projectName}`,
+    subject: `CE Status Update: ${ceNumber} → ${newStatus} - ${projectName}`,
     html: shell(`
       <h3>${ceNumber} status updated</h3>
       <p><strong>Project:</strong> ${projectName}</p>
@@ -139,7 +139,7 @@ export async function sendInvitationEmail(
   await transporter.sendMail({
     from: FROM(),
     to: email,
-    subject: `You've been invited to ${projectName} — Aurum Project Controls`,
+    subject: `You've been invited to ${projectName} - Aurum Project Controls`,
     html: shell(`
       <h3 style="color:#080F1C;font-size:20px;margin:0 0 8px">You're invited</h3>
       <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
@@ -157,7 +157,7 @@ export async function sendInvitationEmail(
   })
 }
 
-// Contract events are legally significant — an unnoticed one costs money — so
+// Contract events are legally significant - an unnoticed one costs money - so
 // these go to every project member who hasn't opted out.
 export async function notifyContractEvent(opts: {
   projectId: string
@@ -184,13 +184,13 @@ export async function notifyContractEvent(opts: {
   const rows = opts.fields.map(([label, value]) => `
     <tr>
       <td style="padding:6px 12px 6px 0;font-size:13px;color:#6B7280;white-space:nowrap">${label}</td>
-      <td style="padding:6px 0;font-size:13px;color:#0F1F4B;font-weight:bold">${value || '—'}</td>
+      <td style="padding:6px 0;font-size:13px;color:#0F1F4B;font-weight:bold">${value || '-'}</td>
     </tr>`).join('')
 
   await transporter.sendMail({
     from: FROM(),
     to: recipients.join(', '),
-    subject: `${opts.heading}: ${opts.reference} — ${project.name}`,
+    subject: `${opts.heading}: ${opts.reference} - ${project.name}`,
     html: shell(`
       <h3 style="color:#080F1C;font-size:18px;margin:0 0 4px">${opts.heading}</h3>
       <p style="color:#6B7280;margin:0 0 16px;font-size:13px">${project.name}</p>
@@ -224,7 +224,7 @@ export async function sendCommentNotification(opts: {
   await transporter.sendMail({
     from: FROM(),
     to: opts.recipients.join(', '),
-    subject: `New comment on ${opts.on} — ${opts.projectName}`,
+    subject: `New comment on ${opts.on} - ${opts.projectName}`,
     html: shell(`
       <h3 style="color:#080F1C;font-size:18px;margin:0 0 4px">New comment</h3>
       <p style="color:#6B7280;margin:0 0 16px;font-size:13px">
@@ -249,7 +249,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   await transporter.sendMail({
     from: FROM(),
     to: email,
-    subject: 'Reset your password — Aurum Project Controls',
+    subject: 'Reset your password - Aurum Project Controls',
     html: shell(`
       <h3 style="color:#080F1C;font-size:20px;margin:0 0 8px">Password reset</h3>
       <p style="color:#6B7280;margin:0 0 24px;font-size:14px">
@@ -257,7 +257,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0"><tr><td bgcolor="#B45309" style="border-radius:8px"><a href="${resetUrl}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#FFFFFF;text-decoration:none">Reset Password</a></td></tr></table>
       <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0">
-        If you didn't request this, you can safely ignore this email — your password will not change.
+        If you didn't request this, you can safely ignore this email - your password will not change.
       </p>
       <p style="color:#D1D5DB;font-size:11px;margin:8px 0 0">
         Or copy this link: ${resetUrl}

@@ -140,8 +140,8 @@ export default function CommentThread({ targetType, targetId, title = 'Discussio
     onError: () => toast.error('Could not add your reaction.'),
   })
 
-  // Everyone on the project can comment — including viewers (the client side
-  // of a contract needs a voice) — but never on a completed project.
+  // Everyone on the project can comment - including viewers (the client side
+  // of a contract needs a voice) - but never on a completed project.
   const canComment = !!role && !isCompleted
 
   const submit = (e: React.FormEvent) => {
@@ -230,14 +230,14 @@ export default function CommentThread({ targetType, targetId, title = 'Discussio
                   className="rounded border-slate-300 text-gold-600 focus:ring-gold-500"
                 />
                 <Lock className="w-3 h-3" />
-                Managers only — hide this from Viewer accounts (e.g. commercial or funding matters)
+                Managers only - hide this from Viewer accounts (e.g. commercial or funding matters)
               </label>
             )}
           </form>
         )}
 
         {isCompleted && (
-          <p className="text-xs text-slate-400 pt-1">This project is completed — the discussion is read-only.</p>
+          <p className="text-xs text-slate-400 pt-1">This project is completed - the discussion is read-only.</p>
         )}
       </div>
     </div>

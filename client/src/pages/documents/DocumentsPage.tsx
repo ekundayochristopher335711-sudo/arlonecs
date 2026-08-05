@@ -25,7 +25,7 @@ export default function DocumentsPage() {
   const toast = useToast()
   const downloadMutation = useMutation({
     mutationFn: (doc: ProjectDocument) => downloadDocument(projectId!, doc.id, doc.name),
-    onError: () => toast.error('Download failed — the file may no longer be in storage.'),
+    onError: () => toast.error('Download failed - the file may no longer be in storage.'),
   })
 
   return (

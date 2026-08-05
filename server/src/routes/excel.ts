@@ -63,7 +63,7 @@ router.get('/:projectId/exports/risks', authenticate, requireProjectAccess, asyn
     wb.created = new Date()
 
     const ws = wb.addWorksheet('Risk Register', { pageSetup: { orientation: 'landscape', fitToPage: true } })
-    addTitleRow(ws, `Risk Register — ${project?.name}`, 9)
+    addTitleRow(ws, `Risk Register - ${project?.name}`, 9)
 
     ws.columns = [
       { key: 'riskId', width: 12 },
@@ -136,7 +136,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
     wb.creator = 'Aurum Project Controls'
 
     const ws = wb.addWorksheet('CE Summary', { pageSetup: { orientation: 'landscape', fitToPage: true } })
-    addTitleRow(ws, `Compensation Event Summary — ${project?.name}`, 8)
+    addTitleRow(ws, `Compensation Event Summary - ${project?.name}`, 8)
 
     ws.columns = [
       { key: 'ceNumber', width: 12 },
@@ -195,7 +195,7 @@ router.get('/:projectId/exports/ces', authenticate, requireProjectAccess, async 
   }
 })
 
-// ─── CSV EXPORTS — universal format, opens on any device ────────────────────
+// ─── CSV EXPORTS - universal format, opens on any device ────────────────────
 
 function csvEscape(v: unknown): string {
   const s = v === null || v === undefined ? '' : String(v)

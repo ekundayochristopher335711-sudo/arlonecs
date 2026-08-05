@@ -26,7 +26,7 @@ router.get('/actions', authenticate, async (req: AuthRequest, res): Promise<void
       return
     }
 
-    // Completed projects are archives — nothing there needs action
+    // Completed projects are archives - nothing there needs action
     const activeIds = (await prisma.project.findMany({
       where: { id: { in: projectIds }, isActive: true },
       select: { id: true },

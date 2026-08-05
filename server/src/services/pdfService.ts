@@ -57,7 +57,7 @@ function addLetterhead(doc: Doc, project: ProjectMeta): number {
   doc.font('Helvetica').fontSize(8.5).fillColor(MUTED)
     .text(meta || 'Project Controls Document', textX, 62, { width: right - textX - 10, lineBreak: false })
 
-  // Double rule — the traditional letterhead divider
+  // Double rule - the traditional letterhead divider
   doc.moveTo(left, 94).lineTo(right, 94).lineWidth(2).strokeColor(NAVY).stroke()
   doc.moveTo(left, 98).lineTo(right, 98).lineWidth(0.75).strokeColor(GOLD).stroke()
   doc.lineWidth(1)
@@ -65,7 +65,7 @@ function addLetterhead(doc: Doc, project: ProjectMeta): number {
   return 116
 }
 
-// Formal, centred document title — bold and letter-spaced like a legal notice
+// Formal, centred document title - bold and letter-spaced like a legal notice
 function addDocumentTitle(doc: Doc, title: string, reference?: string, y?: number): number {
   const top = y ?? doc.y
   doc.font('Helvetica-Bold').fontSize(15).fillColor(NAVY)
@@ -126,14 +126,14 @@ function sectionTitle(doc: Doc, text: string) {
   doc.fillColor(NAVY)
 }
 
-// Aligned label/value pairs — reads like a formal record, not a form dump
+// Aligned label/value pairs - reads like a formal record, not a form dump
 function fieldTable(doc: Doc, fields: Array<[string, string]>) {
   const labelW = 125
   fields.forEach(([label, value]) => {
     const y = doc.y
     doc.font('Helvetica').fontSize(9).fillColor(MUTED).text(label, 40, y, { width: labelW })
     doc.font('Helvetica-Bold').fontSize(9).fillColor(NAVY)
-      .text(value || '—', 40 + labelW, y, { width: doc.page.width - 80 - labelW })
+      .text(value || '-', 40 + labelW, y, { width: doc.page.width - 80 - labelW })
     doc.y = Math.max(doc.y, y + 14)
     doc.moveDown(0.15)
   })
@@ -159,7 +159,7 @@ function tableRow(doc: Doc, cols: string[], widths: number[], isHeader = false, 
   doc.font('Helvetica')
 }
 
-// Signature block — what makes a notice read as a served contractual document
+// Signature block - what makes a notice read as a served contractual document
 function signatureBlock(doc: Doc) {
   doc.moveDown(1.5)
   sectionTitle(doc, 'Acknowledgement of Receipt')
@@ -252,7 +252,7 @@ export function generateNoticePDF(
     ['Issued To', String(notice['issuedTo'] ?? '')],
     ['Date Issued', notice['dateIssued'] ? new Date(notice['dateIssued'] as string).toLocaleDateString('en-GB') : ''],
     ['Response Due', notice['dueDate'] ? new Date(notice['dueDate'] as string).toLocaleDateString('en-GB') : 'Not specified'],
-    ['Related Compensation Event', ce ? `${ce['ceNumber']} — ${ce['title']}` : 'None'],
+    ['Related Compensation Event', ce ? `${ce['ceNumber']} - ${ce['title']}` : 'None'],
   ])
 
   doc.moveDown(1)
@@ -355,7 +355,7 @@ export function generateCESummaryPDF(
 // ── Adjudication dossier ─────────────────────────────────────────────────────
 // One document containing the whole contractual record: registers, the full
 // text of every notice, and the audit trail. This is the bundle you hand to an
-// adjudicator — the side with clean records wins.
+// adjudicator - the side with clean records wins.
 export interface DossierData {
   project: ProjectMeta
   earlyWarnings: Array<Record<string, unknown>>
@@ -470,7 +470,7 @@ export function generateDossierPDF(res: Response, data: DossierData) {
       .text(`Total valuation: £${total.toLocaleString('en-GB')}`, 40, doc.y)
   }
 
-  // Notices — full text, since this is the evidence that matters most
+  // Notices - full text, since this is the evidence that matters most
   newSection('Notices Issued')
   if (data.notices.length === 0) {
     doc.font('Helvetica').fontSize(9).fillColor(MUTED).text('No notices issued.', 40, doc.y)
@@ -479,7 +479,7 @@ export function generateDossierPDF(res: Response, data: DossierData) {
       guardSpace(140)
       if (i > 0) doc.moveDown(0.8)
       doc.font('Helvetica-Bold').fontSize(10).fillColor(NAVY)
-        .text(`${n['noticeNumber']} — ${NOTICE_TYPE_LABELS[String(n['type'])] ?? 'Notice'}`, 40, doc.y, { width: doc.page.width - 80 })
+        .text(`${n['noticeNumber']} - ${NOTICE_TYPE_LABELS[String(n['type'])] ?? 'Notice'}`, 40, doc.y, { width: doc.page.width - 80 })
       doc.font('Helvetica').fontSize(8.5).fillColor(MUTED)
         .text(`Issued ${n['dateIssued'] ? new Date(n['dateIssued'] as string).toLocaleDateString('en-GB') : ''} to ${n['issuedTo'] ?? ''}${n['dueDate'] ? `  ·  Response due ${new Date(n['dueDate'] as string).toLocaleDateString('en-GB')}` : ''}`,
           40, doc.y + 2, { width: doc.page.width - 80 })

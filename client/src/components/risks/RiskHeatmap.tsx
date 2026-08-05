@@ -60,7 +60,7 @@ export default function RiskHeatmap({ risks, onCellClick }: Props) {
         </div>
 
         <div className="flex-1">
-          {/* Grid — rows = impact (5→1), cols = probability (1→5) */}
+          {/* Grid - rows = impact (5→1), cols = probability (1→5) */}
           <div className="grid gap-1" style={{ gridTemplateColumns: '80px repeat(5, 1fr)' }}>
             {/* Header row */}
             <div />
@@ -68,7 +68,7 @@ export default function RiskHeatmap({ risks, onCellClick }: Props) {
               <div key={i} className="text-center text-xs font-medium text-slate-500 pb-1">{i + 1}</div>
             ))}
 
-            {/* Data rows — impact from 5 down to 1 */}
+            {/* Data rows - impact from 5 down to 1 */}
             {[5, 4, 3, 2, 1].map((impact) => (
               <>
                 <div key={`label-${impact}`} className="flex items-center justify-end pr-2 text-xs text-slate-500 font-medium">

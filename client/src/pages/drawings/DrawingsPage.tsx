@@ -99,7 +99,7 @@ export default function DrawingsPage() {
                 <tr key={d.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <span className="font-mono text-xs font-semibold text-navy-900 bg-navy-50 px-2 py-0.5 rounded">
-                      {d.reference || '—'}
+                      {d.reference || '-'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -156,7 +156,7 @@ export default function DrawingsPage() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gold-50 file:text-gold-700 hover:file:bg-gold-100"
             />
-            <p className="text-xs text-slate-400 mt-1.5">PDF, DWG, DXF or image — up to 15MB.</p>
+            <p className="text-xs text-slate-400 mt-1.5">PDF, DWG, DXF or image - up to 15MB.</p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" onClick={closeUpload}>Cancel</Button>

@@ -45,7 +45,7 @@ export default function RegisterPage() {
         <div className="w-14 h-14 rounded-full gradient-brand flex items-center justify-center mx-auto mb-4">
           <ShieldCheck className="w-7 h-7 text-navy-900" />
         </div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Account created — pending approval</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Account created - pending approval</h2>
         <p className="text-sm text-slate-500 mb-6 leading-relaxed">
           For security, an administrator reviews every new account. You'll be able to sign in as soon as yours is approved.
         </p>

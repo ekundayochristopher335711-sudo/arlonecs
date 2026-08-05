@@ -27,7 +27,7 @@ export default function UsersPage() {
     onSuccess: (updated, vars) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
       toast.success(
-        vars.data.isActive === true ? `${updated.email} approved — they can now sign in`
+        vars.data.isActive === true ? `${updated.email} approved - they can now sign in`
         : vars.data.isActive === false ? `${updated.email} deactivated`
         : `${updated.email} updated`,
       )

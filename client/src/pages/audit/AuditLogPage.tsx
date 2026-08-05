@@ -49,7 +49,7 @@ export default function AuditLogPage() {
         <div>
           <h1 className="text-2xl font-bold text-navy-900">Audit Trail</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {data?.total ?? 0} entries — every action is recorded with timestamp and user
+            {data?.total ?? 0} entries - every action is recorded with timestamp and user
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -111,8 +111,8 @@ export default function AuditLogPage() {
                           {Object.entries(log.changes).map(([field, change]) => (
                             <div key={field}>
                               <span className="font-medium text-slate-700">{field}:</span>{' '}
-                              <span className="text-red-500 line-through">{String((change as {old: unknown}).old ?? '—')}</span>{' '}
-                              <span className="text-green-600">→ {String((change as {new: unknown}).new ?? '—')}</span>
+                              <span className="text-red-500 line-through">{String((change as {old: unknown}).old ?? '-')}</span>{' '}
+                              <span className="text-green-600">→ {String((change as {new: unknown}).new ?? '-')}</span>
                             </div>
                           ))}
                         </div>

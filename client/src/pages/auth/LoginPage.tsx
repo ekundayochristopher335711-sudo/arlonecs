@@ -32,14 +32,14 @@ export default function LoginPage() {
       navigate('/home')
     } catch (e: unknown) {
       const resp = (e as { response?: { status?: number; data?: { message?: string } } })?.response
-      // 403 = right password but account pending approval / deactivated — explain why
+      // 403 = right password but account pending approval / deactivated - explain why
       setServerError(resp?.status === 403 && resp.data?.message ? resp.data.message : 'Invalid email or password. Please try again.')
     }
   }
 
   return (
     <div className="min-h-screen bg-navy-900 flex">
-      {/* Left panel — branding */}
+      {/* Left panel - branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950" />
         <div className="absolute top-0 left-0 w-full h-full opacity-5"
@@ -61,7 +61,7 @@ export default function LoginPage() {
             <span className="text-gradient-brand">Intelligence Engine</span>
           </h1>
           <p className="text-slate-400 text-base leading-relaxed max-w-sm">
-            Digitise Early Warnings, Risk Registers, Compensation Events and commercial reporting — built exclusively for NEC3 and NEC4 contracts.
+            Digitise Early Warnings, Risk Registers, Compensation Events and commercial reporting - built exclusively for NEC3 and NEC4 contracts.
           </p>
 
           <div className="mt-10 grid grid-cols-2 gap-4">
@@ -84,7 +84,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Right panel — login form */}
+      {/* Right panel - login form */}
       <div className="flex-1 flex items-center justify-center p-6 bg-white">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}

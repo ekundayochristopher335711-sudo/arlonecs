@@ -31,7 +31,7 @@ const MODULES = [
     icon: Clock,
     title: 'NEC deadline engine',
     short: 'Clause clocks calculated automatically',
-    body: 'Every clause clock runs automatically — the 8-week time bar, the one-week reply and the three-week quotation.',
+    body: 'Every clause clock runs automatically - the 8-week time bar, the one-week reply and the three-week quotation.',
   },
   {
     icon: AlertTriangle,
@@ -80,7 +80,7 @@ const PROOF = [
   {
     icon: CalendarDays,
     stat: '1 week',
-    label: 'for the Project Manager to reply — miss it and a quotation can be deemed accepted',
+    label: 'for the Project Manager to reply - miss it and a quotation can be deemed accepted',
   },
   {
     icon: FileSpreadsheet,
@@ -113,9 +113,9 @@ const AUDIENCES = [
 ]
 
 const BENEFITS = [
-  'NEC clause logic built in — not a generic workflow you configure yourself',
+  'NEC clause logic built in - not a generic workflow you configure yourself',
   'Working in 30 minutes, not three months',
-  'Transparent pricing — no sales call to find out what it costs',
+  'Transparent pricing - no sales call to find out what it costs',
   'Priced for small and mid-size contractors, not only tier-one',
   'Every record exportable as PDF, Excel or CSV for the final account',
 ]
@@ -160,7 +160,7 @@ const FAQS = [
   },
   {
     q: 'Who can see our commercial information?',
-    a: 'Only people invited to that specific project, and only as far as their role allows. Viewers can read and comment but never edit. Comments can also be restricted to managers, so discussion about money stays away from read-only accounts. Uploaded files are never given a public link — every download is authenticated and recorded.',
+    a: 'Only people invited to that specific project, and only as far as their role allows. Viewers can read and comment but never edit. Comments can also be restricted to managers, so discussion about money stays away from read-only accounts. Uploaded files are never given a public link - every download is authenticated and recorded.',
   },
   {
     q: 'What happens if a deadline is missed anyway?',
@@ -324,7 +324,7 @@ function Hero({ token }: { token: string | null }) {
               Never lose money to a missed contract deadline
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
-              Aurum runs the NEC clock for you. Early warnings, risks, compensation events and notices in one place — with every contractual deadline counted down, chased by email, and recorded in a tamper-evident audit trail.
+              Aurum runs the NEC clock for you. Early warnings, risks, compensation events and notices in one place - with every contractual deadline counted down, chased by email, and recorded in a tamper-evident audit trail.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link to={token ? '/home' : '/register'} className={primaryAction}>
@@ -566,8 +566,13 @@ function PricingSection() {
           {PLANS.map((plan) => (
             <article
               key={plan.name}
-              className={`flex flex-col rounded-2xl border bg-white p-6 transition duration-200 hover:-translate-y-1 sm:p-8 ${plan.highlight ? 'border-gold-400 shadow-[0_22px_60px_rgba(245,158,11,0.12)] ring-1 ring-gold-200' : 'border-slate-200 shadow-[0_14px_40px_rgba(15,31,75,0.06)]'}`}
+              className={`relative flex flex-col rounded-2xl border bg-white p-6 transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,31,75,0.10)] sm:p-8 ${plan.highlight ? 'border-gold-400 shadow-[0_22px_60px_rgba(245,158,11,0.12)] ring-1 ring-gold-200 lg:-mt-4 lg:pb-10' : 'border-slate-200 shadow-[0_14px_40px_rgba(15,31,75,0.06)]'}`}
             >
+              {plan.highlight ? (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-br from-brand-yellow to-gold-500 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-navy-950 shadow-sm">
+                  Most popular
+                </span>
+              ) : null}
               <div className="border-b border-slate-200 pb-6">
                 <h3 className="font-display text-xl font-bold text-navy-950">{plan.name}</h3>
                 <p className="mt-2 text-sm text-slate-500">{plan.description}</p>
@@ -665,12 +670,12 @@ function ContactSection() {
               See it on your own contract
             </h2>
             <p className="mt-4 max-w-xl leading-7 text-slate-600">
-              Tell us about the project you are administering and we will show you how Aurum would run its clocks — using your contract dates, not a canned demo. We will also answer pricing questions directly, without a sales process.
+              Tell us about the project you are administering and we will show you how Aurum would run its clocks - using your contract dates, not a canned demo. We will also answer pricing questions directly, without a sales process.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Aurum — request a walkthrough')}&body=${encodeURIComponent('Hello Aurum team,\n\nProject / contract form (NEC3 or NEC4):\nOrganisation:\nRoughly how many people would use it:\n\nWhat I would like to see:\n\nThank you.')}`}
+                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Aurum - request a walkthrough')}&body=${encodeURIComponent('Hello Aurum team,\n\nProject / contract form (NEC3 or NEC4):\nOrganisation:\nRoughly how many people would use it:\n\nWhat I would like to see:\n\nThank you.')}`}
                 className={primaryAction}
               >
                 Request a walkthrough

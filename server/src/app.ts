@@ -33,7 +33,7 @@ if (!process.env.VERCEL) {
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
 }
 
-// Running behind a reverse proxy (Vercel/Render/Railway) — needed for
+// Running behind a reverse proxy (Vercel/Render/Railway) - needed for
 // correct client IPs in rate limiting and audit logs
 app.set('trust proxy', 1)
 
@@ -76,7 +76,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Live DB connectivity check — lets us test credentials in seconds without a
+// Live DB connectivity check - lets us test credentials in seconds without a
 // rebuild. Reports only the Prisma error code + high-level meaning, no secrets.
 app.get('/api/health/db', async (_req, res) => {
   const prisma = (await import('./config/database')).default
@@ -94,15 +94,15 @@ app.get('/api/health/db', async (_req, res) => {
     const err = e as { code?: string; message?: string }
     const code = err.code ?? 'UNKNOWN'
     const hints: Record<string, string> = {
-      P1000: 'Authentication failed — the password in DATABASE_URL does not match the database.',
-      P1001: 'Cannot reach the database server — host/port wrong or project paused.',
-      P2021: 'Connected, but tables are missing — migrations have not run.',
+      P1000: 'Authentication failed - the password in DATABASE_URL does not match the database.',
+      P1001: 'Cannot reach the database server - host/port wrong or project paused.',
+      P2021: 'Connected, but tables are missing - migrations have not run.',
     }
     res.status(500).json({ db: 'error', code, hint: hints[code] ?? (err.message ?? '').split('\n')[0].slice(0, 200) })
   }
 })
 
-// NEC deadline clock endpoint — triggered by Vercel Cron (serverless has no
+// NEC deadline clock endpoint - triggered by Vercel Cron (serverless has no
 // always-on process for node-cron). Vercel Cron sends a GET with an
 // Authorization: Bearer <CRON_SECRET> header when CRON_SECRET is configured.
 const runOverdueCron = async (req: express.Request, res: express.Response): Promise<void> => {

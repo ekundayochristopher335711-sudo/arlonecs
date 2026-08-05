@@ -34,11 +34,11 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 const probabilityOptions = [
-  { value: '1', label: '1 – Very Low' },
-  { value: '2', label: '2 – Low' },
-  { value: '3', label: '3 – Medium' },
-  { value: '4', label: '4 – High' },
-  { value: '5', label: '5 – Very High' },
+  { value: '1', label: '1 - Very Low' },
+  { value: '2', label: '2 - Low' },
+  { value: '3', label: '3 - Medium' },
+  { value: '4', label: '4 - High' },
+  { value: '5', label: '5 - Very High' },
 ]
 const statusOptions = [
   { value: 'OPEN', label: 'Open' },
@@ -72,7 +72,7 @@ export default function RisksPage() {
     enabled: !!projectId,
   })
 
-  const ewOptions = [{ value: '', label: '— None —' }, ...ews.map((ew) => ({ value: ew.id, label: `${ew.ewNumber}: ${ew.title}` }))]
+  const ewOptions = [{ value: '', label: '- None -' }, ...ews.map((ew) => ({ value: ew.id, label: `${ew.ewNumber}: ${ew.title}` }))]
 
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -126,7 +126,7 @@ export default function RisksPage() {
       toast.success(`${deleting?.riskId ?? 'Risk'} deleted`)
       setDeleting(null)
     },
-    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
+    onError: () => { toast.error('Delete failed - only project admins can delete records.'); setDeleting(null) },
   })
 
   const totalExposure = risks.filter((r) => r.status === 'OPEN').reduce((sum, r) => sum + (r.costImpact ?? 0), 0)
@@ -139,7 +139,7 @@ export default function RisksPage() {
       setImportMsg(`✓ Imported ${result.imported} risks${result.errors.length ? ` (${result.errors.length} skipped)` : ''}`)
       queryClient.invalidateQueries({ queryKey: ['risks', projectId] })
     } catch {
-      setImportMsg('Import failed — check file format')
+      setImportMsg('Import failed - check file format')
     }
     e.target.value = ''
   }
@@ -206,9 +206,9 @@ export default function RisksPage() {
                   <td className="px-4 py-3">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${probColors[r.probability]}`}>{r.probability}/5</span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600 text-xs font-medium">{r.costImpact != null ? `£${r.costImpact.toLocaleString('en-GB')}` : '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">{r.timeImpact != null ? `${r.timeImpact}d` : '—'}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{r.earlyWarning?.ewNumber ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 text-xs font-medium">{r.costImpact != null ? `£${r.costImpact.toLocaleString('en-GB')}` : '-'}</td>
+                  <td className="px-4 py-3 text-slate-600 text-xs">{r.timeImpact != null ? `${r.timeImpact}d` : '-'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{r.earlyWarning?.ewNumber ?? '-'}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                   <td className="px-4 py-3">
                     {canEdit && (

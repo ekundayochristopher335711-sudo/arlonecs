@@ -73,7 +73,7 @@ export default function NoticesPage() {
     enabled: !!projectId,
   })
 
-  const ceOptions = [{ value: '', label: '— Not linked to a CE —' }, ...ces.map((ce) => ({ value: ce.id, label: `${ce.ceNumber}: ${ce.title}` }))]
+  const ceOptions = [{ value: '', label: '- Not linked to a CE -' }, ...ces.map((ce) => ({ value: ce.id, label: `${ce.ceNumber}: ${ce.title}` }))]
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -99,7 +99,7 @@ export default function NoticesPage() {
       toast.success(`${deleting?.noticeNumber ?? 'Notice'} deleted`)
       setDeleting(null)
     },
-    onError: () => { toast.error('Delete failed — only project admins can delete records.'); setDeleting(null) },
+    onError: () => { toast.error('Delete failed - only project admins can delete records.'); setDeleting(null) },
   })
 
   const handleDownload = async (noticeId: string, noticeNumber: string) => {
@@ -160,7 +160,7 @@ export default function NoticesPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-600">{n.issuedTo}</td>
                   <td className="px-4 py-3 text-xs text-slate-600">{format(parseISO(n.dateIssued), 'dd MMM yyyy')}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{n.ce?.ceNumber ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{n.ce?.ceNumber ?? '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <button onClick={() => handleDownload(n.id, n.noticeNumber)} title="Download PDF" className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-gold-600 transition-colors"><Download className="w-4 h-4" /></button>
@@ -178,7 +178,7 @@ export default function NoticesPage() {
         requirePassword
         open={!!deleting}
         title={`Delete ${deleting?.noticeNumber}?`}
-        message={`"${deleting?.title}" will be permanently removed. Formal notices form part of the contractual record — deleting is recorded in the audit trail.`}
+        message={`"${deleting?.title}" will be permanently removed. Formal notices form part of the contractual record - deleting is recorded in the audit trail.`}
         loading={deleteMutation.isPending}
         onConfirm={() => deleting && deleteMutation.mutate(deleting.id)}
         onCancel={() => setDeleting(null)}
@@ -186,7 +186,7 @@ export default function NoticesPage() {
 
       <Modal open={modalOpen} onClose={closeModal} title="Issue Notice" size="xl">
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-          <Input label="Notice Title *" placeholder="e.g. Early Warning — Ground Contamination" error={errors.title?.message} {...register('title')} />
+          <Input label="Notice Title *" placeholder="e.g. Early Warning - Ground Contamination" error={errors.title?.message} {...register('title')} />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Notice Type *" options={[{ value: '', label: 'Select type…' }, ...noticeTypes]} {...register('type')} error={errors.type?.message} />
             <Select label="Linked Compensation Event" options={ceOptions} {...register('ceId')} />

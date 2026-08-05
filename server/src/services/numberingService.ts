@@ -11,7 +11,7 @@ const fieldMap: Record<NumberedModel, string> = {
 }
 
 // Next sequential reference for a project (e.g. CE-004). Based on the highest
-// existing number — not row count — so deletions never cause duplicates.
+// existing number - not row count - so deletions never cause duplicates.
 export async function nextNumber(model: NumberedModel, projectId: string, prefix: string): Promise<string> {
   const field = fieldMap[model]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

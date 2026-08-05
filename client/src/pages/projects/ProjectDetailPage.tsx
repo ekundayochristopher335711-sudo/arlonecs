@@ -62,7 +62,7 @@ export default function ProjectDetailPage() {
   const copyLink = (token: string) => {
     const link = `${window.location.origin}/accept-invitation/${token}`
     navigator.clipboard.writeText(link)
-      .then(() => toast.success('Invite link copied — paste it in WhatsApp, email, anywhere'))
+      .then(() => toast.success('Invite link copied - paste it in WhatsApp, email, anywhere'))
       .catch(() => toast.error('Could not copy. Long-press the link to copy manually.'))
   }
 
@@ -119,7 +119,7 @@ export default function ProjectDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
       toast.success('Project role updated')
     },
-    onError: () => toast.error('Could not change role — project admins only.'),
+    onError: () => toast.error('Could not change role - project admins only.'),
   })
 
   const removeMutation = useMutation({
@@ -136,7 +136,7 @@ export default function ProjectDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
-      toast.success('Project completed — it is now a read-only archive')
+      toast.success('Project completed - it is now a read-only archive')
       setCompleteOpen(false)
     },
     onError: () => { toast.error('Could not complete the project.'); setCompleteOpen(false) },
@@ -147,7 +147,7 @@ export default function ProjectDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
-      toast.success('Project reopened — editing and reminders are back on')
+      toast.success('Project reopened - editing and reminders are back on')
     },
     onError: () => toast.error('Could not reopen the project.'),
   })
@@ -163,7 +163,7 @@ export default function ProjectDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
-      toast.success('Project details updated — exported documents will use them')
+      toast.success('Project details updated - exported documents will use them')
       setEditOpen(false)
     },
     onError: () => toast.error('Could not save the project details.'),
@@ -210,7 +210,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      {/* Header — stacks on phones so the action buttons never widen the page */}
+      {/* Header - stacks on phones so the action buttons never widen the page */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm text-slate-400 mb-2 min-w-0">
@@ -257,7 +257,7 @@ export default function ProjectDetailPage() {
           <Archive className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <p className="text-sm text-amber-800">
             <span className="font-semibold">This project is completed and read-only.</span>{' '}
-            All records are preserved for the contractual archive — nothing can be added or changed, and daily deadline reminders are paused. A project admin can reopen it at any time.
+            All records are preserved for the contractual archive - nothing can be added or changed, and daily deadline reminders are paused. A project admin can reopen it at any time.
           </p>
         </div>
       )}
@@ -419,9 +419,9 @@ export default function ProjectDetailPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Role</label>
             <select className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green/40" {...register('role')}>
-              <option value="VIEWER">Viewer — read only</option>
-              <option value="COMMERCIAL_MANAGER">Commercial Manager — can create & edit</option>
-              <option value="ADMIN">Admin — full access</option>
+              <option value="VIEWER">Viewer - read only</option>
+              <option value="COMMERCIAL_MANAGER">Commercial Manager - can create & edit</option>
+              <option value="ADMIN">Admin - full access</option>
             </select>
           </div>
 
@@ -430,7 +430,7 @@ export default function ProjectDetailPage() {
               <p className="text-sm text-green-700 font-medium">{inviteSuccess}</p>
               {inviteLink && (
                 <>
-                  <p className="text-xs text-slate-500">Share this link with them directly — it works even without email set up:</p>
+                  <p className="text-xs text-slate-500">Share this link with them directly - it works even without email set up:</p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-2 truncate">{inviteLink}</code>
                     <Button type="button" size="sm" variant="outline" icon={<Copy className="w-3.5 h-3.5" />} onClick={() => copyLink(inviteToken)}>

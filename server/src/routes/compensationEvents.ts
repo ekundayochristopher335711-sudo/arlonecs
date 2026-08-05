@@ -13,11 +13,11 @@ import { isValidTransition, replyDueFrom, quotationDueFrom, quoteReplyDueFrom } 
 
 // Files are stored IN the database (bytea) so they survive serverless deploys
 // and are backed up with everything else. Legacy rows created before this
-// change may still point at ./uploads on disk — downloads fall back to it.
+// change may still point at ./uploads on disk - downloads fall back to it.
 const UPLOAD_DIR = path.join(__dirname, '../../uploads')
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-// List/detail responses must never drag file bytes along — always select
+// List/detail responses must never drag file bytes along - always select
 const docSelect = { id: true, ceId: true, category: true, name: true, size: true, mimeType: true, uploadedBy: true, createdAt: true }
 
 const router = express.Router()
@@ -109,8 +109,8 @@ router.post('/:projectId/compensation-events',
           ['Compensation Event', ce.ceNumber],
           ['NEC clause', ce.clauseRef ?? 'Not stated'],
           ['Date notified', ce.dateNotified.toLocaleDateString('en-GB')],
-          ['Response due', ce.dateResponseDue ? ce.dateResponseDue.toLocaleDateString('en-GB') : '—'],
-          ['Quotation due', ce.dateQuotationDue ? ce.dateQuotationDue.toLocaleDateString('en-GB') : '—'],
+          ['Response due', ce.dateResponseDue ? ce.dateResponseDue.toLocaleDateString('en-GB') : '-'],
+          ['Quotation due', ce.dateQuotationDue ? ce.dateQuotationDue.toLocaleDateString('en-GB') : '-'],
         ],
         note: 'A reply is required within the contractual period shown above.',
       }).catch(console.error)
@@ -152,7 +152,7 @@ router.put('/:projectId/compensation-events/:id',
         updateData.dateQuotationDue = updateData.dateQuotationDue ? new Date(updateData.dateQuotationDue) : null
       }
       // cl. 62.3: once the quotation is submitted (status → QUOTED), the PM has
-      // 2 weeks to reply — restart the response clock automatically
+      // 2 weeks to reply - restart the response clock automatically
       if (updateData.status === 'QUOTED' && existing.status !== 'QUOTED' && updateData.dateResponseDue === undefined) {
         updateData.dateResponseDue = quoteReplyDueFrom(new Date())
       }

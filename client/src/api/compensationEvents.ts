@@ -1,7 +1,7 @@
 import api from '../lib/axios'
 import type { CompensationEvent, CEStatus } from '../types'
 
-// Write payload — form values converted to API types (null clears a value)
+// Write payload - form values converted to API types (null clears a value)
 export interface CEPayload {
   title?: string
   description?: string

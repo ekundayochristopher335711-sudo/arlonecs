@@ -141,7 +141,7 @@ publicRouter.post('/:token/accept',
       let user = await prisma.user.findUnique({ where: { email: invitation.email } })
       if (!user) {
         // The invitation role applies to THIS PROJECT ONLY. The global role is
-        // always VIEWER — never taken from the invitation (privilege escalation).
+        // always VIEWER - never taken from the invitation (privilege escalation).
         user = await prisma.user.create({
           data: { email: invitation.email, password: hashed, name, role: 'VIEWER' },
         })
