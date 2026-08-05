@@ -29,9 +29,10 @@ export function PageLoader() {
   return (
     <div className="fixed inset-0 bg-navy-900 flex flex-col items-center justify-center z-50">
       <div className="flex flex-col items-center gap-5">
-        <div className="relative w-16 h-16">
+        {/* Flex centring keeps the mark centred whatever the logo's aspect ratio */}
+        <div className="relative flex h-20 w-20 items-center justify-center">
           {/* Spinning gold-to-blue ring */}
-          <svg width="64" height="64" viewBox="0 0 100 100" className="animate-spin absolute inset-0" style={{ animationDuration: '1.2s' }}>
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full animate-spin" style={{ animationDuration: '1.2s' }}>
             <defs>
               <linearGradient id="loaderGrad" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#FBBF24" />
@@ -39,9 +40,9 @@ export function PageLoader() {
                 <stop offset="100%" stopColor="#3B82F6" />
               </linearGradient>
             </defs>
-            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#loaderGrad)" strokeWidth="8" strokeLinecap="round" strokeDasharray="200 76" />
+            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#loaderGrad)" strokeWidth="6" strokeLinecap="round" strokeDasharray="200 76" />
           </svg>
-          <img src="/logo.png" alt="Aurum" className="absolute inset-0 p-3" />
+          <img src="/logo.png" alt="" className="relative h-10 w-10 object-contain" />
         </div>
         <div className="text-center">
           <p className="text-white font-display font-bold text-lg tracking-wide">AURUM</p>
