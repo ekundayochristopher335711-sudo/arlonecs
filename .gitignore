@@ -7,3 +7,6 @@ build/
 uploads/
 .DS_Store
 *.tsbuildinfo
+
+# Video production subproject - 1GB+ of renders, not part of the app
+hyperframes-construction-hero/

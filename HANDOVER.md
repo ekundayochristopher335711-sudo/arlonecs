@@ -50,6 +50,10 @@ Vercel → Settings → General → **Project Name** → rename (this changes th
 `CLIENT_URL` is what invitation and password-reset emails put in their links. If
 it still points at the old address, every emailed link will break.
 
+The custom domain is **`aurumite.com`**: add it (and `www.aurumite.com`) under
+Settings → Domains, then set `CLIENT_URL` to the address Vercel actually serves
+— e.g. `https://www.aurumite.com`, no trailing slash — and redeploy.
+
 When a custom domain is purchased, add it under Settings → Domains and set
 `CLIENT_URL` to that instead.
 
@@ -62,10 +66,27 @@ favicon regenerated from it.
 
 ## Email deliverability
 
-Emails currently send from a personal Gmail account, so first-time recipients
-often find them in Spam. Once a custom domain exists, move to a transactional
-provider (Resend or Brevo — both free at this volume) and set `SMTP_HOST`,
-`SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` to their values. No code changes needed.
+Emails now send via **Resend** from **`notifications@aurumite.com`**
+(previously a personal Gmail account). Deliverability depends on the DNS
+records Resend generated for the domain — DKIM, SPF and ideally DMARC — being
+present at the registrar and showing **Verified** under Resend → Domains. If
+mail starts landing in Spam, check that page first.
+
+The SMTP settings on Supabase are **not used** by this app: it sends its own
+mail through Nodemailer, configured entirely by the Vercel environment
+variables:
+
+| Name | Value |
+|------|-------|
+| `SMTP_HOST` | `smtp.resend.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | `resend` |
+| `SMTP_PASS` | a Resend API key (`re_…`) |
+| `SMTP_FROM` | `notifications@aurumite.com` |
+
+`SMTP_FROM` is a new variable — the code now uses it for the "From" address,
+because Resend's SMTP username is the literal string `resend`, not an email
+address. See `DEPLOY_VERCEL_SUPABASE.md` for the full step-by-step.
 
 ## Still outstanding
 

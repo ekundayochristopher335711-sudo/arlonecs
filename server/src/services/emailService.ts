@@ -1,10 +1,14 @@
 import nodemailer from 'nodemailer'
 import prisma from '../config/database'
 
+// SMTP provider. Production uses Resend (smtp.resend.com); local dev may use
+// anything else. Port 465 speaks implicit TLS; 587 uses STARTTLS, which needs
+// secure:false — so the flag is derived from the port, never hardcoded.
+const SMTP_PORT = Number(process.env.SMTP_PORT) || 587
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host: process.env.SMTP_HOST || 'smtp.resend.com',
+  port: SMTP_PORT,
+  secure: SMTP_PORT === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -13,7 +17,35 @@ const transporter = nodemailer.createTransport({
 
 const emailConfigured = () => Boolean(process.env.SMTP_USER && process.env.SMTP_PASS)
 
-const FROM = () => `"Aurum Project Controls" <${process.env.SMTP_USER}>`
+// With Resend the SMTP username is the literal string "resend" and the password
+// is an API key, so the sender address cannot be derived from SMTP_USER.
+// SMTP_FROM carries the verified sender (e.g. notifications@aurumite.com);
+// falling back to SMTP_USER keeps Gmail-style setups working unchanged.
+const FROM = () => process.env.SMTP_FROM
+  ? `"Aurum Project Controls" <${process.env.SMTP_FROM}>`
+  : `"Aurum Project Controls" <${process.env.SMTP_USER}>`
+
+// Diagnostic helper: sends a plain test message so SMTP problems surface with
+// the provider's exact error instead of dying silently inside a
+// fire-and-forget notification. Used by scripts/test-email.ts and the
+// CRON_SECRET-guarded /api/health/email diagnostic endpoint.
+export async function sendTestEmail(to: string) {
+  if (!emailConfigured()) {
+    throw new Error('SMTP not configured - set SMTP_USER and SMTP_PASS')
+  }
+  const info = await transporter.sendMail({
+    from: FROM(),
+    to,
+    subject: 'Aurum - test email',
+    text: `SMTP test sent ${new Date().toISOString()} from ${FROM()}`,
+    html: shell(
+      `<h3 style="color:#080F1C;font-size:18px;margin:0 0 8px">It works</h3>` +
+      `<p style="color:#6B7280;margin:0;font-size:14px">Test email sent at ${new Date().toISOString()}. Invitations, password resets and deadline alerts will arrive from this address too.</p>`,
+    ),
+  })
+  return { messageId: info.messageId, response: info.response, accepted: info.accepted, rejected: info.rejected }
+}
+
 
 function shell(inner: string): string {
   return `

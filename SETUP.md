@@ -71,9 +71,13 @@ For the backend:
 | Variable      | Default                                              | Description           |
 |---------------|------------------------------------------------------|-----------------------|
 | DATABASE_URL  | postgresql://aurum:aurum_secret@localhost:5432/aurum_db | PostgreSQL connection |
+| DIRECT_URL    | (same as DATABASE_URL locally)                       | Non-pooled connection used by migrations |
 | JWT_SECRET    | (required)                                           | JWT signing secret    |
-| CLIENT_URL    | http://localhost:5173                               | CORS allowed origin   |
+| CLIENT_URL    | http://localhost:5173                               | CORS allowed origin + links in emails |
 | PORT          | 5000                                                | API server port       |
+| SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS | (optional) | Email provider — Resend: `smtp.resend.com`, port `587`, user `resend`, pass = Resend API key |
+| SMTP_FROM     | (optional)                                           | Verified sender address, e.g. `notifications@aurumite.com` |
+| CRON_SECRET   | (optional)                                           | Protects the Vercel Cron endpoint `/api/cron/overdue` |
 
 ---
 

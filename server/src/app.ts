@@ -120,4 +120,35 @@ const runOverdueCron = async (req: express.Request, res: express.Response): Prom
 app.get('/api/cron/overdue', runOverdueCron)
 app.post('/api/cron/overdue', runOverdueCron)
 
+// SMTP diagnostic - sends a test email and returns the provider's verbatim
+// error, so email delivery problems can be checked from production in seconds.
+// Guarded by CRON_SECRET (same pattern as the cron endpoint) and disabled
+// entirely when CRON_SECRET is not configured, so it can never be abused as an
+// open relay.
+app.get('/api/health/email', async (req, res) => {
+  const secret = process.env.CRON_SECRET
+  if (!secret) { res.status(403).json({ message: 'Set CRON_SECRET to enable this diagnostic' }); return }
+  const provided = req.headers.authorization?.replace('Bearer ', '') || (req.query.secret as string)
+  if (provided !== secret) { res.status(401).json({ message: 'Unauthorized' }); return }
+
+  const to = String(req.query.to || '')
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) { res.status(400).json({ message: 'Provide ?to=you@example.com' }); return }
+
+  const config = {
+    host: process.env.SMTP_HOST || 'smtp.resend.com (default)',
+    port: Number(process.env.SMTP_PORT) || 587,
+    from: process.env.SMTP_FROM || '(missing - falls back to SMTP_USER)',
+    smtpUserSet: Boolean(process.env.SMTP_USER),
+    smtpPassSet: Boolean(process.env.SMTP_PASS),
+  }
+  try {
+    const { sendTestEmail } = await import('./services/emailService')
+    const result = await sendTestEmail(to)
+    res.json({ ok: true, config, result })
+  } catch (e) {
+    const err = e as { message?: string; code?: string; response?: string; command?: string }
+    res.status(502).json({ ok: false, config, error: { message: err.message, code: err.code, command: err.command, response: err.response } })
+  }
+})
+
 export default app

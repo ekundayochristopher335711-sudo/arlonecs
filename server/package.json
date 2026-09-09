@@ -12,6 +12,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "email:test": "tsx scripts/test-email.ts",
     "db:reset": "tsx scripts/reset-db.ts"
   },
   "prisma": {

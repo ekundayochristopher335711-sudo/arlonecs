@@ -180,7 +180,7 @@ const FAQS = [
   },
 ]
 
-const CONTACT_EMAIL = 'aurumadmindash@gmail.com'
+const CONTACT_EMAIL = 'notifications@aurumite.com'
 
 const primaryAction =
   'group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-brand-yellow to-gold-500 px-6 py-3.5 text-sm font-bold text-navy-950 shadow-[0_10px_24px_rgba(245,158,11,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(245,158,11,0.28)] focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2'

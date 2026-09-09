@@ -47,9 +47,10 @@ In your Vercel project → **Settings → General**:
 | `DATABASE_URL` | Supabase pooler URL from step 1 (with `?pgbouncer=true&connection_limit=1`) |
 | `DIRECT_URL` | Supabase direct URL (port 5432) |
 | `JWT_SECRET` | any long random string |
-| `CLIENT_URL` | your Vercel URL, e.g. `https://arlonecs.vercel.app` (no trailing slash) |
+| `CLIENT_URL` | your site URL, e.g. `https://www.aurumite.com` (no trailing slash) |
 | `CRON_SECRET` | any random string (protects the daily email job) |
-| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` | optional — for invitation / reset / deadline emails |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` | Resend SMTP — see the Resend section below |
+| `SMTP_FROM` | the verified sender address, e.g. `notifications@aurumite.com` |
 
 **Delete `VITE_API_URL` if it exists** — the frontend must use the same-origin `/api`.
 
@@ -67,6 +68,59 @@ Push to the connected GitHub repo (or click **Redeploy**). On build, Vercel auto
 - **Password:** `ARLOTECH`
 
 (Change this password in `server/prisma/seed.ts` before real launch — it's printed in build logs.)
+
+---
+
+## Sending email with Resend (notifications@aurumite.com)
+
+The app sends its own mail (invitations, password resets, comment alerts, the
+daily deadline digest) through Resend's SMTP relay via Nodemailer. The SMTP
+settings inside Supabase are **not used** — everything is configured by these
+Vercel environment variables (add for Production + Preview):
+
+| Name | Value |
+|------|-------|
+| `SMTP_HOST` | `smtp.resend.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | `resend` (literally — Resend requires this username) |
+| `SMTP_PASS` | a Resend API key (`re_…`) from resend.com/api-keys |
+| `SMTP_FROM` | `notifications@aurumite.com` |
+
+One-time setup, in order:
+
+1. **Resend → Domains → Add domain** → `aurumite.com`. Copy the DKIM / SPF /
+   DMARC records it generates into the domain's DNS at the registrar and wait
+   until it shows **Verified**. Without this, Resend rejects sends.
+2. **Resend → API Keys** → create a sending key → use it as `SMTP_PASS`.
+3. **Vercel → Settings → Domains** → add `aurumite.com` (and `www`).
+4. Set `SMTP_FROM=notifications@aurumite.com`, replace the old Gmail
+   `SMTP_USER`/`SMTP_PASS` values, and set `CLIENT_URL` to the address Vercel
+   serves (e.g. `https://www.aurumite.com`, no trailing slash).
+5. **Redeploy** — environment variable changes only take effect on a new build.
+
+Test afterwards: use "Forgot password" for a **registered** account (unknown
+emails are silently ignored by design), then check the inbox and Resend → Logs.
+
+### If no email arrives — run the diagnostic
+
+- **Locally:** paste your Resend API key into `server/.env`, then from the
+  `server` folder run `npm run email:test -- you@example.com`. It prints the
+  exact SMTP error on failure.
+- **In production:** open
+  `https://<your-site>/api/health/email?to=you@example.com&secret=<CRON_SECRET>`
+  (requires `CRON_SECRET` to be set). It shows the SMTP config the server sees
+  and the provider's verbatim error.
+
+The two most common causes:
+
+1. **The sending domain is not Verified yet.** While `aurumite.com` is not
+   Verified in Resend → Domains, Resend only allows sending to **your own
+   account's email address** — every other recipient is rejected.
+2. **Wrong Vercel env vars.** `SMTP_USER` must be the literal `resend`,
+   `SMTP_PASS` the full API key, and `SMTP_FROM` the verified sender address.
+   Env changes only take effect after a redeploy.
+
+Also check **Resend → Logs** — failed sends appear there with the reason.
 
 ---
 
