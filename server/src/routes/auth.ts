@@ -105,7 +105,15 @@ router.post('/forgot-password',
         const reset = await prisma.passwordReset.create({
           data: { userId: user.id, expiresAt: new Date(Date.now() + 60 * 60 * 1000) }, // 1 hour
         })
-        sendPasswordResetEmail(user.email, user.name, reset.token).catch(console.error)
+        // The reset email is a blocker for the person waiting, so it is sent
+        // and confirmed BEFORE the response returns. Fire-and-forget races
+        // Vercel freezing the function after the response - that is why
+        // resets could arrive late, or together with the next request's email.
+        try {
+          await sendPasswordResetEmail(user.email, user.name, reset.token)
+        } catch (emailError) {
+          console.error('Password reset email failed:', emailError)
+        }
       }
       res.json({ message: 'If that email is registered, a reset link has been sent.' })
     } catch {
